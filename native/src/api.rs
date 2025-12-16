@@ -22,6 +22,10 @@ pub fn gcloud_login() -> anyhow::Result<()> {
     gcloud::execute_login()
 }
 
+pub fn gcloud_logout() -> anyhow::Result<()> {
+    gcloud::execute_logout()
+}
+
 pub fn list_projects() -> anyhow::Result<Vec<GcpProject>> {
     gcloud::get_projects()
 }

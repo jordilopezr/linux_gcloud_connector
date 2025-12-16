@@ -44,6 +44,42 @@ class DashboardScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Linux Cloud Connector'),
         actions: [
+          statusAsync.when(
+            data: (status) => status['authenticated'] == true 
+                ? IconButton(
+                    icon: const Icon(Icons.logout),
+                    tooltip: 'Logout',
+                    onPressed: () async {
+                       final confirm = await showDialog<bool>(
+                         context: context,
+                         builder: (ctx) => AlertDialog(
+                           title: const Text("Logout"),
+                           content: const Text("This will revoke your Google Cloud credentials from this machine. Are you sure?"),
+                           actions: [
+                             TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text("Cancel")),
+                             TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text("Logout", style: TextStyle(color: Colors.red))),
+                           ],
+                         )
+                       );
+                       
+                       if (confirm == true) {
+                         try {
+                           await gcloudLogout();
+                           ref.invalidate(gcloudStatusProvider);
+                           // ignore: use_build_context_synchronously
+                           ref.read(activeConnectionProvider.notifier).disconnect();
+                         } catch (e) {
+                           if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Logout Error: $e")));
+                           }
+                         }
+                       }
+                    },
+                  )
+                : const SizedBox.shrink(),
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+          ),
           IconButton(
             icon: const Icon(Icons.info_outline),
             tooltip: 'About',

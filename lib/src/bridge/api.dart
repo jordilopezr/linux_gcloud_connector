@@ -17,6 +17,8 @@ Future<bool> checkGcloudAuth() =>
 
 Future<void> gcloudLogin() => RustLib.instance.api.crateApiGcloudLogin();
 
+Future<void> gcloudLogout() => RustLib.instance.api.crateApiGcloudLogout();
+
 Future<List<GcpProject>> listProjects() =>
     RustLib.instance.api.crateApiListProjects();
 

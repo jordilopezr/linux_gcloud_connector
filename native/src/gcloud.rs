@@ -130,3 +130,13 @@ pub fn launch_ssh(project_id: &str, zone: &str, instance_name: &str) -> anyhow::
     Ok(())
 }
 
+pub fn execute_logout() -> Result<()> {
+    println!("RUST: Revoking all gcloud credentials...");
+    // --quiet evita prompts, --all borra todas las cuentas activas
+    let _ = Command::new("gcloud")
+        .args(&["auth", "revoke", "--all", "--quiet"]) 
+        .status(); // Ignoramos el resultado, si falla es probable que ya no haya credenciales.
+
+    Ok(())
+}
+
