@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../bridge/api.dart';
 import '../bridge/gcloud.dart';
@@ -19,7 +20,7 @@ final projectsProvider = FutureProvider<List<GcpProject>>((ref) async {
   try {
     return await listProjects();
   } catch (e) {
-    print("Error listing projects: $e");
+    debugPrint("Error listing projects: $e");
     return [];
   }
 });
@@ -44,7 +45,7 @@ final instancesProvider = FutureProvider<List<GcpInstance>>((ref) async {
   try {
     return await listInstances(projectId: projectId);
   } catch (e) {
-    print("Error listing instances for $projectId: $e");
+    debugPrint("Error listing instances for $projectId: $e");
     return [];
   }
 });
@@ -87,24 +88,44 @@ class ConnectionNotifier extends Notifier<ConnectionState> {
       try {
         await stopConnection(instanceName: currentInstance);
       } catch (e) {
-        print("Error stopping tunnel: $e");
+        debugPrint("Error stopping tunnel: $e");
       }
     }
     state = ConnectionState(status: 'disconnected');
   }
 
-  Future<void> launchRDP() async {
-    if (state.port != null && state.instanceName != null) {
-      try {
-        await launchRdp(port: state.port!, instanceName: state.instanceName!);
-      } catch (e) {
-        state = ConnectionState(
-          status: state.status, 
-          instanceName: state.instanceName, 
-          port: state.port, 
-          error: "Launch Failed: $e"
-        );
+  Future<void> launchRDP(String projectId, String zone, String instanceName) async {
+    // Check if already connected to this specific instance
+    bool alreadyConnected = state.status == 'connected' && 
+                            state.instanceName == instanceName && 
+                            state.port != null;
+
+    try {
+      if (!alreadyConnected) {
+        // If connected to something else, disconnect first
+        if (state.status == 'connected') {
+          await disconnect();
+        }
+        // Auto-connect
+        await connect(projectId, zone, instanceName);
       }
+
+      // Launch Remmina
+      if (state.port != null) {
+        try {
+          await launchRdp(port: state.port!, instanceName: instanceName);
+        } catch (e) {
+           // If launch fails but connect worked, we stay connected but show error
+           state = ConnectionState(
+            status: state.status, 
+            instanceName: state.instanceName, 
+            port: state.port, 
+            error: "Launch Failed: $e"
+          );
+        }
+      }
+    } catch (e) {
+      state = ConnectionState(status: 'disconnected', error: "Auto-connect failed: $e");
     }
   }
 }

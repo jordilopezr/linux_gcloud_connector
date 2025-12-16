@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'src/bridge/api.dart';
 import 'src/bridge/frb_generated.dart';
-import 'src/bridge/gcloud.dart';
 import 'src/features/gcloud_provider.dart';
 
 Future<void> main() async {
@@ -33,7 +32,6 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statusAsync = ref.watch(gcloudStatusProvider);
     
-    // Watch connection state for errors handling
     ref.listen(activeConnectionProvider, (previous, next) {
       if (next.error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -43,17 +41,25 @@ class DashboardScreen extends ConsumerWidget {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Linux Cloud Connector')),
+      appBar: AppBar(
+        title: const Text('Linux Cloud Connector'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'About',
+            onPressed: () => _showAboutDialog(context),
+          ),
+          const SizedBox(width: 8),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Status Section
             _buildStatusSection(context, ref, statusAsync),
             const Divider(height: 30),
             
-            // Project Selector
             statusAsync.when(
               data: (status) => status['authenticated'] == true 
                   ? const ProjectSelector() 
@@ -64,11 +70,39 @@ class DashboardScreen extends ConsumerWidget {
             
             const SizedBox(height: 20),
             
-            // Instance List
              const Expanded(child: InstanceList()),
           ],
         ),
       ),
+    );
+  }
+
+  void _showAboutDialog(BuildContext context) {
+    showAboutDialog(
+      context: context,
+      applicationName: 'Linux Cloud Connector',
+      applicationVersion: '1.0.0',
+      applicationLegalese: '© 2025 Jordi Lopez Reyes',
+      applicationIcon: const Icon(Icons.cloud_circle, size: 48, color: Colors.blueAccent),
+      children: [
+        const SizedBox(height: 20),
+        const Text("A native tool to simplify Google Cloud IAP connections on Linux."),
+        const SizedBox(height: 20),
+        const Text("Key Features:", style: TextStyle(fontWeight: FontWeight.bold)),
+        const Text("• Auto-Discovery (Projects & VMs)"),
+        const Text("• Secure IAP Tunneling"),
+        const Text("• Smart RDP Launch (Remmina)"),
+        const Text("• Native SSH Terminal Support"),
+        const Divider(height: 30),
+        const Text("Developer: Jordi Lopez Reyes"),
+        const SelectableText("Email: aim@jordilopezr.com", style: TextStyle(color: Colors.blue)),
+        const SizedBox(height: 10),
+        const Text("Source Code:"),
+        const SelectableText(
+          "https://github.com/jordilopezr/linux_gcloud_connector", 
+          style: TextStyle(color: Colors.blue, decoration: TextDecoration.underline)
+        ),
+      ],
     );
   }
 
@@ -97,7 +131,9 @@ class DashboardScreen extends ConsumerWidget {
                     await gcloudLogin();
                     ref.invalidate(gcloudStatusProvider);
                   } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Login Failed: $e")));
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Login Failed: $e")));
+                    }
                   }
                 },
                 icon: const Icon(Icons.login),
@@ -126,7 +162,7 @@ class _StatusChip extends StatelessWidget {
         color: active ? Colors.green : Colors.red,
       ),
       label: Text(label),
-      backgroundColor: active ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+      backgroundColor: active ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
     );
   }
 }
@@ -192,51 +228,92 @@ class InstanceList extends ConsumerWidget {
             final isBusy = connectionState.status != 'disconnected' && !isConnectedToThis; 
 
             return Card(
-              child: ListTile(
-                leading: Icon(
-                  Icons.computer,
-                  color: isRunning ? Colors.green : Colors.grey,
-                ),
-                title: Text(instance.name),
-                subtitle: Column(
+              margin: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("${instance.zone} • ${instance.status}"),
-                    if (isConnectedToThis) ...[
-                      const SizedBox(height: 5),
-                      Text(
-                        "Tunnel Active: localhost:${connectionState.port}",
-                        style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                    Row(
+                      children: [
+                        Icon(Icons.computer, color: isRunning ? Colors.green : Colors.grey),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(instance.name, style: Theme.of(context).textTheme.titleMedium),
+                              Text("${instance.zone} • ${instance.status}", style: Theme.of(context).textTheme.bodySmall),
+                            ],
+                          ),
+                        ),
+                        if (isConnectingToThis)
+                           const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                      ],
+                    ),
+                    if (isConnectedToThis)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          "Tunnel Active: localhost:${connectionState.port}",
+                          style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
+                        ),
                       ),
-                      const SizedBox(height: 5),
-                      OutlinedButton.icon(
-                        icon: const Icon(Icons.desktop_windows, size: 16),
-                        label: const Text("Launch Remote Desktop"),
-                        onPressed: () {
-                           ref.read(activeConnectionProvider.notifier).launchRDP();
-                        },
+                    
+                    if (isRunning) ...[
+                      const SizedBox(height: 12),
+                      Wrap(
+                        spacing: 8.0,
+                        runSpacing: 8.0,
+                        children: [
+                          // SSH Button
+                          OutlinedButton.icon(
+                            icon: const Icon(Icons.terminal, size: 18),
+                            label: const Text("SSH"),
+                            onPressed: isBusy ? null : () async {
+                               ScaffoldMessenger.of(context).showSnackBar(
+                                 SnackBar(content: Text("Launching SSH for ${instance.name}...")),
+                               );
+                               try {
+                                 await launchSsh(projectId: selectedProject, zone: instance.zone, instanceName: instance.name);
+                               } catch (e) {
+                                 if (context.mounted) {
+                                   ScaffoldMessenger.of(context).showSnackBar(
+                                     SnackBar(content: Text("Failed: $e"), backgroundColor: Colors.red),
+                                   );
+                                 }
+                               }
+                            },
+                          ),
+                          // RDP Button (Auto-connects)
+                          OutlinedButton.icon(
+                            icon: const Icon(Icons.desktop_windows, size: 18),
+                            label: const Text("RDP"),
+                            onPressed: isBusy ? null : () {
+                               ref.read(activeConnectionProvider.notifier).launchRDP(
+                                 selectedProject, instance.zone, instance.name
+                               );
+                            },
+                          ),
+                          // Manual Connect/Disconnect
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: isConnectedToThis ? Colors.red.withValues(alpha: 0.1) : null,
+                              foregroundColor: isConnectedToThis ? Colors.red : null,
+                            ),
+                            onPressed: isBusy ? null : () {
+                              if (isConnectedToThis) {
+                                ref.read(activeConnectionProvider.notifier).disconnect();
+                              } else {
+                                ref.read(activeConnectionProvider.notifier).connect(selectedProject, instance.zone, instance.name);
+                              }
+                            },
+                            child: Text(isConnectedToThis ? "Disconnect" : "Create Tunnel"),
+                          ),
+                        ],
                       )
                     ]
                   ],
-                ),
-                trailing: SizedBox(
-                  width: 130,
-                  child: isConnectingToThis
-                      ? const Center(child: CircularProgressIndicator())
-                      : ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: isConnectedToThis ? Colors.red : null,
-                            foregroundColor: isConnectedToThis ? Colors.white : null,
-                          ),
-                          onPressed: (isRunning && !isBusy) ? () {
-                            if (isConnectedToThis) {
-                              ref.read(activeConnectionProvider.notifier).disconnect();
-                            } else {
-                              ref.read(activeConnectionProvider.notifier).connect(selectedProject, instance.zone, instance.name);
-                            }
-                          } : null,
-                          child: Text(isConnectedToThis ? "Disconnect" : "Connect"),
-                        ),
                 ),
               ),
             );

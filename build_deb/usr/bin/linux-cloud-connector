@@ -1,0 +1,2 @@
+#!/bin/bash
+exec /usr/lib/linux-cloud-connector/linux_cloud_connector "$@"

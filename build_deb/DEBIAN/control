@@ -1,0 +1,12 @@
+Package: linux-cloud-connector
+Version: 1.0.0
+Architecture: amd64
+Maintainer: Jordi Lopez Reyes <aim@jordilopezr.com>
+Installed-Size: 42560
+Depends: libgtk-3-0, liblzma5, remmina
+Section: utils
+Priority: optional
+Description: Native Google Cloud IAP Connector for Linux
+ Una herramienta nativa para conectar a instancias de Google Cloud Platform (GCP)
+ mediante Identity-Aware Proxy (IAP) de forma segura.
+ Incluye soporte para RDP (Remmina) y SSH.

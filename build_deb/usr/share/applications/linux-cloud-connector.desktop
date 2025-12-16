@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Linux Cloud Connector
+Comment=Native Google Cloud IAP Connector for Linux
+Exec=linux-cloud-connector
+Icon=linux-cloud-connector
+Categories=Development;Network;Utility;
+Terminal=false
+StartupNotify=true

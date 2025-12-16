@@ -43,3 +43,13 @@ Future<void> launchRdp({required int port, required String instanceName}) =>
       port: port,
       instanceName: instanceName,
     );
+
+Future<void> launchSsh({
+  required String projectId,
+  required String zone,
+  required String instanceName,
+}) => RustLib.instance.api.crateApiLaunchSsh(
+  projectId: projectId,
+  zone: zone,
+  instanceName: instanceName,
+);
