@@ -2,7 +2,7 @@ Package: linux-cloud-connector
 Version: 1.0.0
 Architecture: amd64
 Maintainer: Jordi Lopez Reyes <aim@jordilopezr.com>
-Installed-Size: 42560
+Installed-Size: 42568
 Depends: libgtk-3-0, liblzma5, remmina
 Section: utils
 Priority: optional

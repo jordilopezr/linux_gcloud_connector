@@ -48,3 +48,5 @@ credentials.json
 # Debian Packaging
 build_deb/
 *.deb
+*.deb
+linux-cloud-connector_1.0.0_amd64.deb
