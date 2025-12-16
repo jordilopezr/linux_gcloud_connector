@@ -1,0 +1,46 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# IntelliJ / Android Studio
+*.iml
+.idea/
+.run/
+
+# Visual Studio Code
+.vscode/
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+flutter_*.png
+flutter_*.jpg
+
+# Linux Desktop
+linux/flutter/ephemeral/
+linux/flutter/generated_plugins.cmake
+
+# Rust (Native)
+native/target/
+native/Cargo.lock
+**/*.rs.bk
+
+# Ephemeral config files (if any created inside project)
+*.remmina
+
+# Credentials (Just in case)
+key.json
+credentials.json
