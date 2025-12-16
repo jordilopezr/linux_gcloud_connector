@@ -44,3 +44,7 @@ native/Cargo.lock
 # Credentials (Just in case)
 key.json
 credentials.json
+
+# Debian Packaging
+build_deb/
+*.deb
