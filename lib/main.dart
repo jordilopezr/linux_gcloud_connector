@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'src/bridge/api.dart';
+import 'src/bridge/gcloud.dart';
+import 'src/bridge/remmina.dart';
 import 'src/bridge/frb_generated.dart';
 import 'src/features/gcloud_provider.dart';
 
@@ -32,14 +34,6 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final statusAsync = ref.watch(gcloudStatusProvider);
     
-    ref.listen(activeConnectionProvider, (previous, next) {
-      if (next.error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Error: ${next.error}"), backgroundColor: Colors.red),
-        );
-      }
-    });
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Linux Cloud Connector'),
@@ -66,8 +60,7 @@ class DashboardScreen extends ConsumerWidget {
                          try {
                            await gcloudLogout();
                            ref.invalidate(gcloudStatusProvider);
-                           // ignore: use_build_context_synchronously
-                           ref.read(activeConnectionProvider.notifier).disconnect();
+                           ref.invalidate(activeConnectionsProvider);
                          } catch (e) {
                            if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Logout Error: $e")));
@@ -88,27 +81,46 @@ class DashboardScreen extends ConsumerWidget {
           const SizedBox(width: 8),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildStatusSection(context, ref, statusAsync),
-            const Divider(height: 30),
-            
-            statusAsync.when(
-              data: (status) => status['authenticated'] == true 
-                  ? const ProjectSelector() 
-                  : const SizedBox.shrink(),
-              loading: () => const LinearProgressIndicator(),
-              error: (_, __) => const Text("Error checking status"),
-            ),
-            
-            const SizedBox(height: 20),
-            
-             const Expanded(child: InstanceList()),
-          ],
-        ),
+      body: statusAsync.when(
+        data: (status) {
+           if (status['installed'] != true) {
+             return const Center(child: Text("Google Cloud CLI not installed."));
+           }
+           if (status['authenticated'] != true) {
+             return Center(
+               child: ElevatedButton.icon(
+                  onPressed: () async {
+                    try {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Launching browser for login...")));
+                      await gcloudLogin();
+                      ref.invalidate(gcloudStatusProvider);
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Login Failed: $e")));
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.login),
+                  label: const Text("Login to Google Cloud"),
+                ),
+             );
+           }
+           
+           return const Row(
+             children: [
+               SizedBox(
+                 width: 300,
+                 child: ResourceTree(),
+               ),
+               VerticalDivider(width: 1),
+               Expanded(
+                 child: InstanceDetailPane(),
+               ),
+             ],
+           );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, _) => Center(child: Text("Error: $err")),
       ),
     );
   }
@@ -117,7 +129,7 @@ class DashboardScreen extends ConsumerWidget {
     showAboutDialog(
       context: context,
       applicationName: 'Linux Cloud Connector',
-      applicationVersion: '1.0.0',
+      applicationVersion: '1.1.0',
       applicationLegalese: '© 2025 Jordi Lopez Reyes',
       applicationIcon: const Icon(Icons.cloud_circle, size: 48, color: Colors.blueAccent),
       children: [
@@ -141,64 +153,341 @@ class DashboardScreen extends ConsumerWidget {
       ],
     );
   }
+}
 
-  Widget _buildStatusSection(BuildContext context, WidgetRef ref, AsyncValue<Map<String, bool>> statusAsync) {
-    return statusAsync.when(
-      data: (status) {
-        final installed = status['installed'] ?? false;
-        final authenticated = status['authenticated'] ?? false;
+class ResourceTree extends ConsumerWidget {
+  const ResourceTree({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Column(
+      children: [
+        const Padding(
+          padding: EdgeInsets.all(8.0),
+          child: ProjectSelector(),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: _buildInstanceList(context, ref),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInstanceList(BuildContext context, WidgetRef ref) {
+    final instancesAsync = ref.watch(instancesProvider);
+    final selectedProject = ref.watch(selectedProjectProvider);
+    final selectedInstance = ref.watch(selectedInstanceProvider);
+    final connections = ref.watch(activeConnectionsProvider);
+
+    if (selectedProject == null) {
+      return const Center(child: Text("Select a project", style: TextStyle(color: Colors.grey)));
+    }
+
+    return instancesAsync.when(
+      data: (instances) {
+        if (instances.isEmpty) return const Center(child: Text("No instances found."));
         
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                _StatusChip(label: "Gcloud Installed", active: installed),
-                const SizedBox(width: 10),
-                _StatusChip(label: "Authenticated", active: authenticated),
-              ],
-            ),
-            if (installed && !authenticated) ...[
-              const SizedBox(height: 10),
-              ElevatedButton.icon(
-                onPressed: () async {
-                  try {
-                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Launching browser for login...")));
-                    await gcloudLogin();
-                    ref.invalidate(gcloudStatusProvider);
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Login Failed: $e")));
-                    }
-                  }
-                },
-                icon: const Icon(Icons.login),
-                label: const Text("Login to Google Cloud"),
-              )
-            ]
-          ],
+        // Group instances by Zone
+        final Map<String, List<GcpInstance>> byZone = {};
+        for (var instance in instances) {
+          byZone.putIfAbsent(instance.zone, () => []).add(instance);
+        }
+
+        return ListView(
+          children: byZone.entries.map((entry) {
+            final zone = entry.key;
+            final zoneInstances = entry.value;
+            return ExpansionTile(
+              initiallyExpanded: true,
+              leading: const Icon(Icons.location_on_outlined, size: 20),
+              title: Text(zone, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              children: zoneInstances.map((instance) {
+                final isSelected = selectedInstance?.name == instance.name;
+                final isConnected = connections[instance.name]?.status == 'connected';
+                
+                return ListTile(
+                  dense: true,
+                  selected: isSelected,
+                  selectedTileColor: Colors.blue.withValues(alpha: 0.1),
+                  leading: Icon(
+                    Icons.computer, 
+                    size: 18, 
+                    color: isConnected ? Colors.green : (instance.status == "RUNNING" ? Colors.blueGrey : Colors.grey)
+                  ),
+                  title: Text(instance.name),
+                  subtitle: Text(instance.status, style: const TextStyle(fontSize: 10)),
+                  onTap: () {
+                    ref.read(selectedInstanceProvider.notifier).select(instance);
+                  },
+                );
+              }).toList(),
+            );
+          }).toList(),
         );
       },
-      loading: () => const Text("Checking gcloud..."),
-      error: (err, stack) => Text("Error: $err"),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text("Error: $err", style: const TextStyle(color: Colors.red)),
+      ),
     );
   }
 }
 
-class _StatusChip extends StatelessWidget {
+class InstanceDetailPane extends ConsumerWidget {
+  const InstanceDetailPane({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedInstance = ref.watch(selectedInstanceProvider);
+    final selectedProject = ref.watch(selectedProjectProvider);
+    final connections = ref.watch(activeConnectionsProvider);
+
+    if (selectedInstance == null || selectedProject == null) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.touch_app, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text("Select an instance to view details", style: TextStyle(color: Colors.grey)),
+          ],
+        ),
+      );
+    }
+
+    final myConnection = connections[selectedInstance.name];
+    final isConnected = myConnection?.status == 'connected';
+    final isConnecting = myConnection?.status == 'connecting';
+    final errorMessage = myConnection?.error;
+    final isRunning = selectedInstance.status == "RUNNING";
+
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.computer, size: 48, color: Colors.blueAccent),
+              const SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(selectedInstance.name, style: Theme.of(context).textTheme.headlineSmall),
+                  Text("${selectedInstance.zone}  •  ${selectedInstance.status}", style: Theme.of(context).textTheme.bodyMedium),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 32),
+          
+          if (errorMessage != null)
+             Container(
+               padding: const EdgeInsets.all(8),
+               color: Colors.red.shade100,
+               child: Row(children: [const Icon(Icons.error, color: Colors.red), const SizedBox(width: 8), Expanded(child: Text(errorMessage))]),
+             ),
+
+          if (isConnected) ...[
+             const SizedBox(height: 16),
+             Container(
+               padding: const EdgeInsets.all(12),
+               decoration: BoxDecoration(
+                 color: Colors.green.shade50,
+                 border: Border.all(color: Colors.green.shade200),
+                 borderRadius: BorderRadius.circular(8),
+               ),
+               child: Row(
+                 children: [
+                   const Icon(Icons.check_circle, color: Colors.green),
+                   const SizedBox(width: 12),
+                   Column(
+                     crossAxisAlignment: CrossAxisAlignment.start,
+                     children: [
+                       const Text("Tunnel Active", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
+                       Text("Listening on localhost:${myConnection!.port}", style: const TextStyle(color: Colors.black87)),
+                     ],
+                   )
+                 ],
+               ),
+             )
+          ],
+
+          const SizedBox(height: 32),
+          const Text("Actions", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 16),
+          
+          Wrap(
+            spacing: 16.0,
+            runSpacing: 16.0,
+            children: [
+              _ActionButton(
+                icon: Icons.desktop_windows,
+                label: "Connect RDP",
+                onPressed: (!isRunning || isConnecting) ? null : () async {
+                   final settings = await _showConnectionSettingsDialog(context);
+                   if (settings != null) {
+                      ref.read(activeConnectionsProvider.notifier).launchRDP(
+                        selectedProject, selectedInstance.zone, selectedInstance.name,
+                        settings: settings
+                      );
+                   }
+                },
+              ),
+              _ActionButton(
+                icon: Icons.terminal,
+                label: "Connect SSH",
+                onPressed: (!isRunning || isConnecting) ? null : () async {
+                   try {
+                     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Launching Terminal...")));
+                     await launchSsh(projectId: selectedProject, zone: selectedInstance.zone, instanceName: selectedInstance.name);
+                   } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("SSH Error: $e")));
+                      }
+                   }
+                },
+              ),
+               _ActionButton(
+                icon: isConnected ? Icons.link_off : Icons.link,
+                label: isConnected ? "Disconnect Tunnel" : "Create Tunnel",
+                backgroundColor: isConnected ? Colors.red.shade50 : null,
+                foregroundColor: isConnected ? Colors.red : null,
+                onPressed: (isConnecting) ? null : () {
+                   if (isConnected) {
+                     ref.read(activeConnectionsProvider.notifier).disconnect(selectedInstance.name);
+                   } else {
+                     ref.read(activeConnectionsProvider.notifier).connect(selectedProject, selectedInstance.zone, selectedInstance.name);
+                   }
+                },
+              ),
+            ],
+          ),
+          
+          if (isConnecting)
+            const Padding(
+              padding: EdgeInsets.only(top: 20),
+              child: LinearProgressIndicator(),
+            )
+        ],
+      ),
+    );
+  }
+  Future<RdpSettings?> _showConnectionSettingsDialog(BuildContext context) async {
+    final userController = TextEditingController();
+    final passController = TextEditingController();
+    final domainController = TextEditingController();
+    bool fullscreen = false;
+    
+    // Default resolution
+    int width = 1920;
+    int height = 1080;
+
+    return showDialog<RdpSettings>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text("Connection Settings"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: userController,
+                      decoration: const InputDecoration(labelText: "Username"),
+                    ),
+                    TextField(
+                      controller: passController,
+                      decoration: const InputDecoration(labelText: "Password"),
+                      obscureText: true,
+                    ),
+                    TextField(
+                      controller: domainController,
+                      decoration: const InputDecoration(labelText: "Domain (Optional)"),
+                    ),
+                    const SizedBox(height: 16),
+                    SwitchListTile(
+                      title: const Text("Fullscreen"),
+                      value: fullscreen,
+                      onChanged: (val) => setState(() => fullscreen = val),
+                    ),
+                    if (!fullscreen)
+                       Row(
+                         children: [
+                           Expanded(child: TextFormField(
+                             initialValue: width.toString(),
+                             decoration: const InputDecoration(labelText: "Width"),
+                             keyboardType: TextInputType.number,
+                             onChanged: (v) => width = int.tryParse(v) ?? 1920,
+                           )),
+                           const SizedBox(width: 16),
+                           Expanded(child: TextFormField(
+                             initialValue: height.toString(),
+                             decoration: const InputDecoration(labelText: "Height"),
+                             keyboardType: TextInputType.number,
+                             onChanged: (v) => height = int.tryParse(v) ?? 1080,
+                           )),
+                         ],
+                       )
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, null), // Cancel
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context, RdpSettings(
+                      username: userController.text.isNotEmpty ? userController.text : null,
+                      password: passController.text.isNotEmpty ? passController.text : null,
+                      domain: domainController.text.isNotEmpty ? domainController.text : null,
+                      fullscreen: fullscreen,
+                      width: fullscreen ? null : width,
+                      height: fullscreen ? null : height,
+                    ));
+                  },
+                  child: const Text("Connect"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+}
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
   final String label;
-  final bool active;
-  const _StatusChip({required this.label, required this.active});
+  final VoidCallback? onPressed;
+  final Color? backgroundColor;
+  final Color? foregroundColor;
+
+  const _ActionButton({
+    required this.icon, 
+    required this.label, 
+    this.onPressed, 
+    this.backgroundColor, 
+    this.foregroundColor
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Chip(
-      avatar: Icon(
-        active ? Icons.check_circle : Icons.error,
-        color: active ? Colors.green : Colors.red,
+    return ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        backgroundColor: backgroundColor,
+        foregroundColor: foregroundColor,
       ),
+      onPressed: onPressed,
+      icon: Icon(icon),
       label: Text(label),
-      backgroundColor: active ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
     );
   }
 }
@@ -216,148 +505,29 @@ class ProjectSelector extends ConsumerWidget {
         if (projects.isEmpty) return const Text("No projects found.");
         return DropdownButtonFormField<String>(
           decoration: const InputDecoration(
-            labelText: 'Select Google Cloud Project',
+            labelText: 'Select Project',
             border: OutlineInputBorder(),
+            contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
           ),
+          isExpanded: true,
           value: selectedProject,
           items: projects.map((p) {
             return DropdownMenuItem(
               value: p.projectId,
-              child: Text("${p.name ?? p.projectId} (${p.projectId})"),
+              child: Text(
+                "${p.name ?? p.projectId}", 
+                overflow: TextOverflow.ellipsis,
+              ),
             );
           }).toList(),
           onChanged: (value) {
             ref.read(selectedProjectProvider.notifier).select(value);
+            ref.read(selectedInstanceProvider.notifier).select(null); // Clear selection
           },
         );
       },
-      loading: () => const CircularProgressIndicator(),
+      loading: () => const LinearProgressIndicator(),
       error: (err, _) => Text("Error loading projects: $err"),
-    );
-  }
-}
-
-class InstanceList extends ConsumerWidget {
-  const InstanceList({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final selectedProject = ref.watch(selectedProjectProvider);
-    if (selectedProject == null) {
-      return const Center(child: Text("Select a project to view instances."));
-    }
-
-    final instancesAsync = ref.watch(instancesProvider);
-    final connectionState = ref.watch(activeConnectionProvider);
-
-    return instancesAsync.when(
-      data: (instances) {
-        if (instances.isEmpty) return const Center(child: Text("No instances found in this project."));
-        return ListView.builder(
-          itemCount: instances.length,
-          itemBuilder: (context, index) {
-            final instance = instances[index];
-            final isRunning = instance.status == "RUNNING";
-            
-            final isConnectedToThis = connectionState.status == 'connected' && connectionState.instanceName == instance.name;
-            final isConnectingToThis = connectionState.status == 'connecting' && connectionState.instanceName == instance.name;
-            final isBusy = connectionState.status != 'disconnected' && !isConnectedToThis; 
-
-            return Card(
-              margin: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.computer, color: isRunning ? Colors.green : Colors.grey),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(instance.name, style: Theme.of(context).textTheme.titleMedium),
-                              Text("${instance.zone} • ${instance.status}", style: Theme.of(context).textTheme.bodySmall),
-                            ],
-                          ),
-                        ),
-                        if (isConnectingToThis)
-                           const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                      ],
-                    ),
-                    if (isConnectedToThis)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: Text(
-                          "Tunnel Active: localhost:${connectionState.port}",
-                          style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                    
-                    if (isRunning) ...[
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 8.0,
-                        runSpacing: 8.0,
-                        children: [
-                          // SSH Button
-                          OutlinedButton.icon(
-                            icon: const Icon(Icons.terminal, size: 18),
-                            label: const Text("SSH"),
-                            onPressed: isBusy ? null : () async {
-                               ScaffoldMessenger.of(context).showSnackBar(
-                                 SnackBar(content: Text("Launching SSH for ${instance.name}...")),
-                               );
-                               try {
-                                 await launchSsh(projectId: selectedProject, zone: instance.zone, instanceName: instance.name);
-                               } catch (e) {
-                                 if (context.mounted) {
-                                   ScaffoldMessenger.of(context).showSnackBar(
-                                     SnackBar(content: Text("Failed: $e"), backgroundColor: Colors.red),
-                                   );
-                                 }
-                               }
-                            },
-                          ),
-                          // RDP Button (Auto-connects)
-                          OutlinedButton.icon(
-                            icon: const Icon(Icons.desktop_windows, size: 18),
-                            label: const Text("RDP"),
-                            onPressed: isBusy ? null : () {
-                               ref.read(activeConnectionProvider.notifier).launchRDP(
-                                 selectedProject, instance.zone, instance.name
-                               );
-                            },
-                          ),
-                          // Manual Connect/Disconnect
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isConnectedToThis ? Colors.red.withValues(alpha: 0.1) : null,
-                              foregroundColor: isConnectedToThis ? Colors.red : null,
-                            ),
-                            onPressed: isBusy ? null : () {
-                              if (isConnectedToThis) {
-                                ref.read(activeConnectionProvider.notifier).disconnect();
-                              } else {
-                                ref.read(activeConnectionProvider.notifier).connect(selectedProject, instance.zone, instance.name);
-                              }
-                            },
-                            child: Text(isConnectedToThis ? "Disconnect" : "Create Tunnel"),
-                          ),
-                        ],
-                      )
-                    ]
-                  ],
-                ),
-              ),
-            );
-          },
-        );
-      },
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (err, _) => Center(child: Text("Error loading instances: $err")),
     );
   }
 }

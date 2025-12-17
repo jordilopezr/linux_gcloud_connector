@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../bridge/api.dart';
 import '../bridge/gcloud.dart';
+import '../bridge/remmina.dart';
 
 // Estado para la instalación/auth
 final gcloudStatusProvider = FutureProvider<Map<String, bool>>((ref) async {
@@ -50,24 +51,41 @@ final instancesProvider = FutureProvider<List<GcpInstance>>((ref) async {
   }
 });
 
-// Gestión de Conexiones (Tunneling)
-class ConnectionState {
-  final String status; // 'disconnected', 'connecting', 'connected'
-  final String? instanceName;
+// UI Selection State
+final selectedInstanceProvider = NotifierProvider<SelectedInstanceNotifier, GcpInstance?>(SelectedInstanceNotifier.new);
+
+class SelectedInstanceNotifier extends Notifier<GcpInstance?> {
+  @override
+  GcpInstance? build() => null;
+
+  void select(GcpInstance? instance) {
+    state = instance;
+  }
+}
+
+// Gestión de Conexiones (Tunneling) - Soporte Múltiple
+class TunnelState {
+  final String status; // 'disconnected', 'connecting', 'connected', 'error'
   final int? port;
   final String? error;
 
-  ConnectionState({this.status = 'disconnected', this.instanceName, this.port, this.error});
+  const TunnelState({this.status = 'disconnected', this.port, this.error});
 }
 
-final activeConnectionProvider = NotifierProvider<ConnectionNotifier, ConnectionState>(ConnectionNotifier.new);
+// Mapa: InstanceName -> TunnelState
+final activeConnectionsProvider = NotifierProvider<ConnectionsNotifier, Map<String, TunnelState>>(ConnectionsNotifier.new);
 
-class ConnectionNotifier extends Notifier<ConnectionState> {
+class ConnectionsNotifier extends Notifier<Map<String, TunnelState>> {
   @override
-  ConnectionState build() => ConnectionState();
+  Map<String, TunnelState> build() => {};
 
   Future<void> connect(String projectId, String zone, String instanceName) async {
-    state = ConnectionState(status: 'connecting', instanceName: instanceName);
+    // Actualizar estado de ESTA instancia a 'connecting'
+    state = {
+      ...state,
+      instanceName: const TunnelState(status: 'connecting')
+    };
+
     try {
       final port = await startConnection(
         projectId: projectId, 
@@ -75,57 +93,78 @@ class ConnectionNotifier extends Notifier<ConnectionState> {
         instanceName: instanceName, 
         remotePort: 3389 
       );
-      state = ConnectionState(status: 'connected', instanceName: instanceName, port: port);
+      
+      // Actualizar a 'connected'
+      state = {
+        ...state,
+        instanceName: TunnelState(status: 'connected', port: port)
+      };
     } catch (e) {
-      state = ConnectionState(status: 'disconnected', error: e.toString());
-      rethrow;
+      // Error solo en esta instancia
+      state = {
+        ...state,
+        instanceName: TunnelState(status: 'error', error: e.toString())
+      };
+      // No hacemos rethrow para no romper la UI general, el estado refleja el error
     }
   }
 
-  Future<void> disconnect() async {
-    final currentInstance = state.instanceName;
-    if (currentInstance != null) {
-      try {
-        await stopConnection(instanceName: currentInstance);
-      } catch (e) {
-        debugPrint("Error stopping tunnel: $e");
-      }
+  Future<void> disconnect(String instanceName) async {
+    // Optimistic update or keep current while processing? Let's just try to stop.
+    try {
+      await stopConnection(instanceName: instanceName);
+    } catch (e) {
+      debugPrint("Error stopping tunnel for $instanceName: $e");
     }
-    state = ConnectionState(status: 'disconnected');
+    
+    // Remove from map or set to disconnected. 
+    // Removing keeps the map clean.
+    final newState = Map<String, TunnelState>.from(state);
+    newState.remove(instanceName);
+    state = newState;
   }
 
-  Future<void> launchRDP(String projectId, String zone, String instanceName) async {
-    // Check if already connected to this specific instance
-    bool alreadyConnected = state.status == 'connected' && 
-                            state.instanceName == instanceName && 
-                            state.port != null;
+  Future<void> launchRDP(String projectId, String zone, String instanceName, {RdpSettings? settings}) async {
+    final currentTunnel = state[instanceName];
+    bool alreadyConnected = currentTunnel?.status == 'connected' && currentTunnel?.port != null;
 
     try {
       if (!alreadyConnected) {
-        // If connected to something else, disconnect first
-        if (state.status == 'connected') {
-          await disconnect();
-        }
-        // Auto-connect
+        // Auto-connect specific instance
         await connect(projectId, zone, instanceName);
+        // Check if connection succeeded
+        final newTunnel = state[instanceName];
+        if (newTunnel?.status != 'connected') {
+           return; // Failed to connect, stop here.
+        }
       }
 
       // Launch Remmina
-      if (state.port != null) {
+      final activeTunnel = state[instanceName];
+      if (activeTunnel?.port != null) {
         try {
-          await launchRdp(port: state.port!, instanceName: instanceName);
-        } catch (e) {
-           // If launch fails but connect worked, we stay connected but show error
-           state = ConnectionState(
-            status: state.status, 
-            instanceName: state.instanceName, 
-            port: state.port, 
-            error: "Launch Failed: $e"
+          await launchRdp(
+            port: activeTunnel!.port!, 
+            instanceName: instanceName,
+            settings: settings ?? const RdpSettings(fullscreen: false)
           );
+        } catch (e) {
+           // Connection is still good, just launch failed
+           state = {
+             ...state,
+             instanceName: TunnelState(
+               status: 'connected', 
+               port: activeTunnel?.port, 
+               error: "Launch Failed: $e" // Show transient error
+             )
+           };
         }
       }
     } catch (e) {
-      state = ConnectionState(status: 'disconnected', error: "Auto-connect failed: $e");
+       state = {
+         ...state,
+         instanceName: TunnelState(status: 'error', error: "Auto-connect failed: $e")
+       };
     }
   }
 }

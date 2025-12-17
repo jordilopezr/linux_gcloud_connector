@@ -5,6 +5,7 @@ use crate::remmina;
 // Re-export structs for FRB
 pub use crate::gcloud::GcpProject;
 pub use crate::gcloud::GcpInstance;
+pub use crate::remmina::RdpSettings; // Export Settings
 
 pub fn greet() -> String {
     "Hello from Rust! Gcloud integration ready.".to_string()
@@ -44,8 +45,8 @@ pub fn stop_connection(instance_name: String) -> anyhow::Result<()> {
 }
 
 // Remote Desktop
-pub fn launch_rdp(port: u16, instance_name: String) -> anyhow::Result<()> {
-    remmina::launch_remmina(port, &instance_name)
+pub fn launch_rdp(port: u16, instance_name: String, settings: RdpSettings) -> anyhow::Result<()> {
+    remmina::launch_remmina(port, &instance_name, settings)
 }
 
 // SSH

@@ -3,8 +3,18 @@ use std::io::Write;
 use std::process::{Command, Stdio};
 use anyhow::{Result, anyhow};
 
-pub fn launch_remmina(port: u16, instance_name: &str) -> Result<()> {
-    println!("RUST: Preparing to launch Remmina for {} on port {}", instance_name, port);
+#[derive(Default, Debug)]
+pub struct RdpSettings {
+    pub username: Option<String>,
+    pub password: Option<String>,
+    pub domain: Option<String>,
+    pub width: Option<u32>,
+    pub height: Option<u32>,
+    pub fullscreen: bool,
+}
+
+pub fn launch_remmina(port: u16, instance_name: &str, settings: RdpSettings) -> Result<()> {
+    println!("RUST: Preparing to launch Remmina for {} on port {} with settings: {:?}", instance_name, port, settings);
     
     let mut config_path_opt = None;
 
@@ -18,15 +28,30 @@ pub fn launch_remmina(port: u16, instance_name: &str) -> Result<()> {
         let mut file_path = config_dir.clone();
         file_path.push(format!("iap_{}.remmina", instance_name));
         
-        let content = format!(r#"
+        let mut content = format!(r#"
 [remmina]
 name={} (IAP)
 protocol=RDP
 server=127.0.0.1:{}
 ignore-certificate=1
-window_maximize=1
 enable-autostart=1
 "#, instance_name, port);
+
+        if let Some(u) = &settings.username { content.push_str(&format!("username={}\n", u)); }
+        if let Some(p) = &settings.password { content.push_str(&format!("password={}\n", p)); }
+        if let Some(d) = &settings.domain { content.push_str(&format!("domain={}\n", d)); }
+        
+        if settings.fullscreen {
+            content.push_str("window_maximize=1\n"); // Remmina treats maximize as almost fullscreen usually, real fullscreen is 'viewmode=4'? Let's check docs or stick to maximize which is safe.
+            // Actually 'viewmode' in remmina: 1=scaled, 2=viewport, 4=fullscreen.
+            content.push_str("viewmode=4\n");
+        } else {
+             if let (Some(w), Some(h)) = (settings.width, settings.height) {
+                 content.push_str(&format!("resolution={}x{}\n", w, h));
+             } else {
+                 content.push_str("window_maximize=1\n");
+             }
+        }
 
         if let Ok(mut file) = File::create(&file_path)
             && file.write_all(content.as_bytes()).is_ok() {
