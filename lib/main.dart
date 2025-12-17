@@ -5,8 +5,11 @@ import 'src/bridge/gcloud.dart';
 import 'src/bridge/remmina.dart';
 import 'src/bridge/frb_generated.dart';
 import 'src/features/gcloud_provider.dart';
+import 'src/services/storage_service.dart';
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await StorageService().init();
   await RustLib.init();
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -263,7 +266,7 @@ class InstanceDetailPane extends ConsumerWidget {
     final errorMessage = myConnection?.error;
     final isRunning = selectedInstance.status == "RUNNING";
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -287,7 +290,7 @@ class InstanceDetailPane extends ConsumerWidget {
              Container(
                padding: const EdgeInsets.all(8),
                color: Colors.red.shade100,
-               child: Row(children: [const Icon(Icons.error, color: Colors.red), const SizedBox(width: 8), Expanded(child: Text(errorMessage))]),
+               child: Row(children: [const Icon(Icons.error, color: Colors.red), const SizedBox(width: 8), Expanded(child: SelectableText(errorMessage))]),
              ),
 
           if (isConnected) ...[
@@ -327,7 +330,7 @@ class InstanceDetailPane extends ConsumerWidget {
                 icon: Icons.desktop_windows,
                 label: "Connect RDP",
                 onPressed: (!isRunning || isConnecting) ? null : () async {
-                   final settings = await _showConnectionSettingsDialog(context);
+                   final settings = await _showConnectionSettingsDialog(context, selectedInstance.name);
                    if (settings != null) {
                       ref.read(activeConnectionsProvider.notifier).launchRDP(
                         selectedProject, selectedInstance.zone, selectedInstance.name,
@@ -375,15 +378,27 @@ class InstanceDetailPane extends ConsumerWidget {
       ),
     );
   }
-  Future<RdpSettings?> _showConnectionSettingsDialog(BuildContext context) async {
+  Future<RdpSettings?> _showConnectionSettingsDialog(BuildContext context, String instanceName) async {
     final userController = TextEditingController();
     final passController = TextEditingController();
     final domainController = TextEditingController();
     bool fullscreen = false;
+    bool saveCredentials = false;
     
     // Default resolution
     int width = 1920;
     int height = 1080;
+
+    // Load saved credentials
+    final saved = await StorageService().getRdpCredentials(instanceName);
+    if (saved['username'] != null) {
+      userController.text = saved['username']!;
+      saveCredentials = true;
+    }
+    if (saved['password'] != null) passController.text = saved['password']!;
+    if (saved['domain'] != null) domainController.text = saved['domain']!;
+
+    if (!context.mounted) return null;
 
     return showDialog<RdpSettings>(
       context: context,
@@ -409,7 +424,15 @@ class InstanceDetailPane extends ConsumerWidget {
                       controller: domainController,
                       decoration: const InputDecoration(labelText: "Domain (Optional)"),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8),
+                    CheckboxListTile(
+                      title: const Text("Save Credentials"),
+                      value: saveCredentials,
+                      onChanged: (val) => setState(() => saveCredentials = val ?? false),
+                      controlAffinity: ListTileControlAffinity.leading,
+                      contentPadding: EdgeInsets.zero,
+                    ),
+                    const Divider(),
                     SwitchListTile(
                       title: const Text("Fullscreen"),
                       value: fullscreen,
@@ -442,15 +465,28 @@ class InstanceDetailPane extends ConsumerWidget {
                   child: const Text("Cancel"),
                 ),
                 ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context, RdpSettings(
-                      username: userController.text.isNotEmpty ? userController.text : null,
-                      password: passController.text.isNotEmpty ? passController.text : null,
-                      domain: domainController.text.isNotEmpty ? domainController.text : null,
-                      fullscreen: fullscreen,
-                      width: fullscreen ? null : width,
-                      height: fullscreen ? null : height,
-                    ));
+                  onPressed: () async {
+                    if (saveCredentials) {
+                      await StorageService().saveRdpCredentials(
+                        instanceName: instanceName,
+                        username: userController.text,
+                        password: passController.text,
+                        domain: domainController.text,
+                      );
+                    } else {
+                      await StorageService().clearRdpCredentials(instanceName);
+                    }
+
+                    if (context.mounted) {
+                      Navigator.pop(context, RdpSettings(
+                        username: userController.text.isNotEmpty ? userController.text : null,
+                        password: passController.text.isNotEmpty ? passController.text : null,
+                        domain: domainController.text.isNotEmpty ? domainController.text : null,
+                        fullscreen: fullscreen,
+                        width: fullscreen ? null : width,
+                        height: fullscreen ? null : height,
+                      ));
+                    }
                   },
                   child: const Text("Connect"),
                 ),
@@ -503,6 +539,13 @@ class ProjectSelector extends ConsumerWidget {
     return projectsAsync.when(
       data: (projects) {
         if (projects.isEmpty) return const Text("No projects found.");
+        
+        // Ensure selected value exists in the list
+        final validSelection = projects.any((p) => p.projectId == selectedProject) ? selectedProject : null;
+        
+        // If selection became invalid, update provider safely? 
+        // Better to just show null in UI, provider will update when user picks.
+        
         return DropdownButtonFormField<String>(
           decoration: const InputDecoration(
             labelText: 'Select Project',
@@ -510,7 +553,7 @@ class ProjectSelector extends ConsumerWidget {
             contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 0),
           ),
           isExpanded: true,
-          value: selectedProject,
+          value: validSelection,
           items: projects.map((p) {
             return DropdownMenuItem(
               value: p.projectId,

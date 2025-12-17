@@ -13,17 +13,15 @@ final gcloudStatusProvider = FutureProvider<Map<String, bool>>((ref) async {
   return {'installed': true, 'authenticated': authenticated};
 });
 
+import '../services/storage_service.dart';
+
 // Provider para la lista de proyectos
 final projectsProvider = FutureProvider<List<GcpProject>>((ref) async {
   final status = await ref.watch(gcloudStatusProvider.future);
   if (status['authenticated'] != true) return [];
   
-  try {
-    return await listProjects();
-  } catch (e) {
-    debugPrint("Error listing projects: $e");
-    return [];
-  }
+  // Directly rethrow the error so the UI can catch and display it
+  return await listProjects();
 });
 
 // Provider para el proyecto seleccionado
@@ -31,10 +29,16 @@ final selectedProjectProvider = NotifierProvider<SelectedProjectNotifier, String
 
 class SelectedProjectNotifier extends Notifier<String?> {
   @override
-  String? build() => null;
+  String? build() {
+    // Attempt to load last selected project from storage
+    return StorageService().getLastProject();
+  }
 
   void select(String? projectId) {
     state = projectId;
+    if (projectId != null) {
+      StorageService().saveLastProject(projectId);
+    }
   }
 }
 
@@ -43,12 +47,8 @@ final instancesProvider = FutureProvider<List<GcpInstance>>((ref) async {
   final projectId = ref.watch(selectedProjectProvider);
   if (projectId == null) return [];
   
-  try {
-    return await listInstances(projectId: projectId);
-  } catch (e) {
-    debugPrint("Error listing instances for $projectId: $e");
-    return [];
-  }
+  // Directly rethrow the error so the UI can catch and display it
+  return await listInstances(projectId: projectId);
 });
 
 // UI Selection State
