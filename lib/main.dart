@@ -132,7 +132,7 @@ class DashboardScreen extends ConsumerWidget {
     showAboutDialog(
       context: context,
       applicationName: 'Linux Cloud Connector',
-      applicationVersion: '1.1.0',
+      applicationVersion: '1.2.1',
       applicationLegalese: '© 2025 Jordi Lopez Reyes',
       applicationIcon: const Icon(Icons.cloud_circle, size: 48, color: Colors.blueAccent),
       children: [
@@ -144,6 +144,8 @@ class DashboardScreen extends ConsumerWidget {
         const Text("• Secure IAP Tunneling"),
         const Text("• Smart RDP Launch (Remmina)"),
         const Text("• Native SSH Terminal Support"),
+        const Text("• Credential Persistence & Secure Storage"),
+        const Text("• Instance Search & Filtering"),
         const Divider(height: 30),
         const Text("Developer: Jordi Lopez Reyes"),
         const SelectableText("Email: aim@jordilopezr.com", style: TextStyle(color: Colors.blue)),
@@ -158,22 +160,81 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
-class ResourceTree extends ConsumerWidget {
+class ResourceTree extends ConsumerStatefulWidget {
   const ResourceTree({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ResourceTree> createState() => _ResourceTreeState();
+}
+
+class _ResourceTreeState extends ConsumerState<ResourceTree> {
+  final TextEditingController _searchController = TextEditingController();
+  String _filterStatus = 'All'; // 'All', 'RUNNING', 'STOPPED'
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       children: [
         const Padding(
           padding: EdgeInsets.all(8.0),
           child: ProjectSelector(),
         ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: 'Search instances...',
+              prefixIcon: const Icon(Icons.search),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+              isDense: true,
+            ),
+            onChanged: (value) => setState(() {}),
+          ),
+        ),
+        const SizedBox(height: 8),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Row(
+            children: [
+              _buildFilterChip('All'),
+              const SizedBox(width: 8),
+              _buildFilterChip('RUNNING'),
+              const SizedBox(width: 8),
+              _buildFilterChip('STOPPED'), // Usually TERMINATED in API, but simpler for UI
+            ],
+          ),
+        ),
         const Divider(height: 1),
         Expanded(
           child: _buildInstanceList(context, ref),
         ),
       ],
+    );
+  }
+
+  Widget _buildFilterChip(String label) {
+    final isSelected = _filterStatus == label;
+    return FilterChip(
+      label: Text(label, style: TextStyle(fontSize: 12, color: isSelected ? Colors.white : Colors.black87)),
+      selected: isSelected,
+      onSelected: (bool selected) {
+        setState(() {
+          _filterStatus = label;
+        });
+      },
+      checkmarkColor: Colors.white,
+      selectedColor: Colors.blueAccent,
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
     );
   }
 
@@ -191,9 +252,21 @@ class ResourceTree extends ConsumerWidget {
       data: (instances) {
         if (instances.isEmpty) return const Center(child: Text("No instances found."));
         
+        // Filter instances
+        final query = _searchController.text.toLowerCase();
+        final filteredInstances = instances.where((inst) {
+          final matchesName = inst.name.toLowerCase().contains(query);
+          final matchesStatus = _filterStatus == 'All' || 
+                                (_filterStatus == 'RUNNING' && inst.status == 'RUNNING') ||
+                                (_filterStatus == 'STOPPED' && inst.status != 'RUNNING');
+          return matchesName && matchesStatus;
+        }).toList();
+
+        if (filteredInstances.isEmpty) return const Center(child: Text("No matching instances."));
+
         // Group instances by Zone
         final Map<String, List<GcpInstance>> byZone = {};
-        for (var instance in instances) {
+        for (var instance in filteredInstances) {
           byZone.putIfAbsent(instance.zone, () => []).add(instance);
         }
 

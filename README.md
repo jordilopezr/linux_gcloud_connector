@@ -4,18 +4,20 @@
 
 Desarrollada por **Jordi Lopez Reyes** con **Flutter** y **Rust** para un rendimiento y seguridad óptimos.
 
-![Status](https://img.shields.io/badge/Status-Stable-green)
+![Status](https://img.shields.io/badge/Status-Stable%20v1.2.1-green)
 ![Platform](https://img.shields.io/badge/Platform-Linux-blue)
 ![License](https://img.shields.io/badge/License-MIT-purple)
 
 ## ✨ Características Clave
 
-*   **🔍 Auto-Discovery:** Detecta automáticamente tus proyectos de GCP e instancias (VMs).
+*   **🔍 Búsqueda y Filtros:** Filtra instancias por nombre y estado (Running/Stopped) en tiempo real.
+*   **🔑 Gestión de Credenciales:** Guarda usuarios, contraseñas y dominios de forma segura (encriptado con `libsecret`).
+*   **💾 Persistencia:** Recuerda tu último proyecto seleccionado y configuración.
 *   **🔒 Auth Integration:** Login integrado con Google Cloud (`gcloud auth login`).
-*   **🛡️ IAP Tunneling:** Gestión automática de túneles TCP seguros.
-*   **🖥️ Smart RDP:** Lanza **Remmina** automáticamente, gestionando el túnel y la configuración en un solo clic.
+*   **🛡️ IAP Tunneling:** Gestión automática de múltiples túneles TCP seguros.
+*   **🖥️ Smart RDP:** Lanza **Remmina** automáticamente con configuraciones avanzadas (pantalla completa, resolución).
 *   **💻 SSH Support:** Detecta tu terminal favorita (`gnome-terminal`, `konsole`, etc.) y lanza sesiones SSH nativas.
-*   **⚡ Native Backend:** Lógica crítica escrita en Rust para máxima velocidad y seguridad de memoria.
+*   **⚡ Native Backend:** Lógica crítica escrita en Rust para máxima velocidad.
 
 ## 🔗 Repositorio y Contacto
 
@@ -27,7 +29,7 @@ Desarrollada por **Jordi Lopez Reyes** con **Flutter** y **Rust** para un rendim
 
 1.  **Google Cloud SDK (`gcloud`):** Instalado y en el PATH.
 2.  **Remmina:** Cliente RDP (Nativo o Flatpak).
-3.  **Flutter & Rust:** Para compilación desde fuente.
+3.  **Librerías del Sistema:** `libsecret-1-dev`, `libjsoncpp-dev` (para almacenamiento seguro).
 
 ## 🚀 Compilación e Instalación
 
@@ -39,6 +41,9 @@ cd linux_cloud_connector
 
 ### 2. Preparar Entorno
 ```bash
+# Instalar dependencias de compilación (Debian/Ubuntu)
+sudo apt-get install libsecret-1-dev libjsoncpp-dev
+
 flutter pub get
 cargo install flutter_rust_bridge_codegen
 ```

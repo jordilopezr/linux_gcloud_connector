@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../bridge/api.dart';
 import '../bridge/gcloud.dart';
 import '../bridge/remmina.dart';
+import '../services/storage_service.dart';
 
 // Estado para la instalación/auth
 final gcloudStatusProvider = FutureProvider<Map<String, bool>>((ref) async {
@@ -12,8 +13,6 @@ final gcloudStatusProvider = FutureProvider<Map<String, bool>>((ref) async {
   final authenticated = await checkGcloudAuth();
   return {'installed': true, 'authenticated': authenticated};
 });
-
-import '../services/storage_service.dart';
 
 // Provider para la lista de proyectos
 final projectsProvider = FutureProvider<List<GcpProject>>((ref) async {

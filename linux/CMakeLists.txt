@@ -9,6 +9,10 @@ set(BINARY_NAME "linux_cloud_connector")
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
 set(APPLICATION_ID "com.example.linux_cloud_connector")
 
+# Force installation to build bundle directory to prevent system-wide install issues.
+set(CMAKE_INSTALL_PREFIX "${PROJECT_BINARY_DIR}/bundle" CACHE PATH "Install path" FORCE)
+
+
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
 cmake_policy(SET CMP0063 NEW)

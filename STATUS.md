@@ -1,61 +1,60 @@
 # Project Status Report
 
 ## 📅 Date: December 17, 2025
-## 🚀 Current State: Stable & Functional (v1.1.0-dev)
+## 🚀 Current State: Stable & Functional (v1.2.1)
 
 This document serves as a context anchor for AI agents continuing development on **Linux Cloud Connector**.
 
 ### ✅ Completed Features
-1.  **Multi-Tunnel Support**:
-    -   The application now manages a map of active connections (`activeConnectionsProvider` in `gcloud_provider.dart`).
-    -   Multiple instances can have active IAP tunnels simultaneously on different local ports.
-2.  **Advanced RDP Settings**:
-    -   Implemented `RdpSettings` in Rust (`native/src/remmina.rs`) and Dart.
-    -   Users can now configure: **Fullscreen**, **Resolution (Width/Height)**, **Username**, **Password**, and **Domain**.
-    -   Configuration is injected into dynamically generated `.remmina` files.
-3.  **UI Stability & Error Handling**:
-    -   **Crash Fix:** `ProjectSelector` now safely handles cases where the selected project ID is missing from the list.
-    -   **Overflow Fix:** `InstanceDetailPane` is scrollable, preventing crashes when displaying long GCP error messages.
-    -   **Error Propagation:** `projectsProvider` and `instancesProvider` now rethrow exceptions, allowing the UI to display critical setup errors (like "API Not Enabled").
+1.  **Smart Search & Filtering (v1.2.1)**:
+    -   Added real-time search bar for instances.
+    -   Added filter chips for "Running" vs "Stopped" instances.
+    -   UI refactored to `ConsumerStatefulWidget` to handle local view state.
+2.  **Credential Persistence & Security (v1.2.0)**:
+    -   **Secure Storage:** Uses `libsecret` (Linux Keyring) to store RDP credentials (User, Pass, Domain).
+    -   **Project Persistence:** Remembers the last selected GCP project via `shared_preferences`.
+    -   **Auto-Fill:** RDP dialog automatically fills known credentials.
+3.  **Multi-Tunnel Support**:
+    -   Manages multiple simultaneous IAP tunnels via `activeConnectionsProvider`.
+4.  **Advanced RDP Settings**:
+    -   Configurable Resolution, Fullscreen, and Auth settings injected into `.remmina` files.
+5.  **Robust Error Handling**:
+    -   UI handles API permissions errors gracefully (scrollable details).
+    -   Compilation and Import issues resolved.
 
 ### 🏗️ Architecture Snapshot
 
 #### Frontend (Flutter + Riverpod)
--   **`lib/main.dart`**: Contains the core UI components (`DashboardScreen`, `ResourceTree`, `InstanceDetailPane`).
--   **`lib/src/features/gcloud_provider.dart`**: The "Brain" of the app. Manages:
-    -   Authentication state.
-    -   Project & Instance fetching.
-    -   **Tunnel State Machine** (Connecting -> Connected -> Error).
+-   **`lib/main.dart`**: Contains `DashboardScreen`, and the new `ResourceTree` (with Search/Filter logic).
+-   **`lib/src/features/gcloud_provider.dart`**: Manages GCP state and persistence logic.
+-   **`lib/src/services/storage_service.dart`**: Abstraction layer for `flutter_secure_storage` and `shared_preferences`.
 
 #### Backend (Rust - `native/src`)
--   **`api.rs`**: Facade and FRB (Flutter Rust Bridge) exports.
--   **`gcloud.rs`**: Wraps `gcloud` CLI commands (JSON parsing for lists, process spawning for SSH).
--   **`remmina.rs`**: Handles `.remmina` profile generation and intelligent launching (Native vs Flatpak detection).
--   **`tunnel.rs`**: Manages `gcloud compute start-iap-tunnel` child processes and local port allocation.
+-   **`remmina.rs`**: RDP logic.
+-   **`tunnel.rs`**: Process management.
+-   **`gcloud.rs`**: CLI wrapping.
 
 ### 📂 Critical Files
 | File | Responsibility |
 | :--- | :--- |
-| `lib/main.dart` | Main UI Layout & Interaction Logic |
-| `lib/src/features/gcloud_provider.dart` | State Management & Logic |
-| `native/src/remmina.rs` | RDP Logic & Configuration |
-| `native/src/tunnel.rs` | Tunnel Process Management |
-| `pubspec.yaml` | Flutter Dependencies |
+| `lib/main.dart` | UI, Search, Filter, RDP Dialog |
+| `lib/src/services/storage_service.dart` | Persistence & Security |
+| `lib/src/features/gcloud_provider.dart` | Business Logic & State |
+| `linux/CMakeLists.txt` | Build configuration (Install Prefix fixed) |
 
 ### 📝 Backlog & Next Steps
-1.  **Persistence**:
-    -   Save the "Last Selected Project" and "RDP Preference" (e.g., always fullscreen) using `shared_preferences`.
-2.  **Error Parsing**:
-    -   The current error display is raw text from `gcloud`. Implementing a parser to extract just the "Verification URL" or "Reason" would improve UX.
-3.  **Packaging**:
-    -   Verify the `package_deb.sh` script works with the new Rust binary structure.
-    -   Consider adding AppImage support.
-4.  **Unit Testing**:
-    -   Add Rust unit tests for `gcloud` JSON output parsing.
+1.  **Generic TCP Tunnels (Port Forwarding)**:
+    -   Allow users to open tunnels for arbitrary ports (DBs, Web UIs) not just RDP (3389).
+2.  **File Transfer (SFTP)**:
+    -   Implement a basic file manager over SSH/SFTP.
+3.  **Monitoring Dashboard**:
+    -   Show CPU/RAM usage graphs for instances.
+4.  **Packaging**:
+    -   Create `.deb` and `.AppImage` releases.
 
 ### ⚠️ Operational Notes
--   **GCP API Requirement**: New projects *must* have the **Compute Engine API** enabled. The app handles this error gracefully now, showing the activation URL.
--   **Runtime Requirements**: `gcloud` CLI and `remmina` must be installed on the host system.
+-   **System Dependencies:** Building now requires `libsecret-1-dev` and `libjsoncpp-dev` on the host machine.
+-   **GCP API Requirement**: Compute Engine API must be enabled.
 
 ---
 *End of Status Report*
