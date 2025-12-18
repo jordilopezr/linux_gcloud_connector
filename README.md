@@ -10,6 +10,8 @@ Desarrollada por **Jordi Lopez Reyes** con **Flutter** y **Rust** para un rendim
 ![Security](https://img.shields.io/badge/Security-Hardened-success)
 ![Observability](https://img.shields.io/badge/Observability-Enterprise-blue)
 
+<img width="1024" height="768" alt="image" src="https://github.com/user-attachments/assets/b510f43b-2a42-462b-9a4e-bfe8618068a5" />
+
 ## ✨ Características Clave
 
 ### 📊 Observabilidad y Monitoreo (v1.4.0)
