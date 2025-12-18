@@ -8,6 +8,8 @@ Desarrollada por **Jordi Lopez Reyes** con **Flutter** y **Rust** para un rendim
 ![Platform](https://img.shields.io/badge/Platform-Linux-blue)
 ![License](https://img.shields.io/badge/License-MIT-purple)
 
+<img width="1024" height="768" alt="image" src="https://github.com/user-attachments/assets/b510f43b-2a42-462b-9a4e-bfe8618068a5" />
+
 ## ✨ Características Clave
 
 *   **🔍 Búsqueda y Filtros:** Filtra instancias por nombre y estado (Running/Stopped) en tiempo real.
