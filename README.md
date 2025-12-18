@@ -4,20 +4,35 @@
 
 Desarrollada por **Jordi Lopez Reyes** con **Flutter** y **Rust** para un rendimiento y seguridad óptimos.
 
-![Status](https://img.shields.io/badge/Status-Stable%20v1.2.1-green)
+![Status](https://img.shields.io/badge/Status-Stable%20v1.4.0-brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-Linux-blue)
 ![License](https://img.shields.io/badge/License-MIT-purple)
+![Security](https://img.shields.io/badge/Security-Hardened-success)
+![Observability](https://img.shields.io/badge/Observability-Enterprise-blue)
 
 ## ✨ Características Clave
 
+### 📊 Observabilidad y Monitoreo (v1.4.0)
+*   **📝 Logging Estructurado:** Sistema persistente con rotación automática (10MB, 5 archivos)
+*   **📤 Export Logs:** Botón UI para exportar logs consolidados para troubleshooting
+*   **📈 Dashboard de Métricas:** Uptime, última verificación, estado de salud en tiempo real
+*   **🎨 Visualización Dinámica:** Badges de estado con colores adaptativos (Verde/Naranja/Rojo)
+
+### 🔒 Seguridad y Fiabilidad (v1.3.0)
+*   **🛡️ Validación de Entradas:** Protección contra inyección de comandos mediante validación regex.
+*   **⏱️ Timeouts Inteligentes:** Todos los comandos gcloud tienen timeout de 10s (evita bloqueos).
+*   **💚 Monitoreo de Salud:** Verificación automática de túneles cada 30 segundos (proceso + puerto TCP).
+*   **🔐 Permisos Seguros:** Archivos .remmina creados con modo 0600 (solo lectura del propietario).
+
+### 🚀 Funcionalidad Principal
 *   **🔍 Búsqueda y Filtros:** Filtra instancias por nombre y estado (Running/Stopped) en tiempo real.
 *   **🔑 Gestión de Credenciales:** Guarda usuarios, contraseñas y dominios de forma segura (encriptado con `libsecret`).
 *   **💾 Persistencia:** Recuerda tu último proyecto seleccionado y configuración.
 *   **🔒 Auth Integration:** Login integrado con Google Cloud (`gcloud auth login`).
-*   **🛡️ IAP Tunneling:** Gestión automática de múltiples túneles TCP seguros.
+*   **🛡️ IAP Tunneling:** Gestión automática de múltiples túneles TCP seguros con monitoreo de salud.
 *   **🖥️ Smart RDP:** Lanza **Remmina** automáticamente con configuraciones avanzadas (pantalla completa, resolución).
 *   **💻 SSH Support:** Detecta tu terminal favorita (`gnome-terminal`, `konsole`, etc.) y lanza sesiones SSH nativas.
-*   **⚡ Native Backend:** Lógica crítica escrita en Rust para máxima velocidad.
+*   **⚡ Native Backend:** Lógica crítica escrita en Rust para máxima velocidad y seguridad.
 
 ## 🔗 Repositorio y Contacto
 

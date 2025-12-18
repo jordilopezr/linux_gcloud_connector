@@ -11,6 +11,16 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await StorageService().init();
   await RustLib.init();
+
+  // Initialize structured logging system
+  try {
+    await initLoggingSystem();
+    debugPrint('✓ Logging system initialized');
+  } catch (e) {
+    debugPrint('⚠️  Failed to initialize logging: $e');
+    // Continue anyway - logging is not critical for app functionality
+  }
+
   runApp(const ProviderScope(child: MyApp()));
 }
 
@@ -77,6 +87,11 @@ class DashboardScreen extends ConsumerWidget {
             error: (_, __) => const SizedBox.shrink(),
           ),
           IconButton(
+            icon: const Icon(Icons.file_download),
+            tooltip: 'Export Logs',
+            onPressed: () => _exportLogs(context),
+          ),
+          IconButton(
             icon: const Icon(Icons.info_outline),
             tooltip: 'About',
             onPressed: () => _showAboutDialog(context),
@@ -128,11 +143,104 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _exportLogs(BuildContext context) async {
+    try {
+      // Show loading indicator
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text('Exporting logs...'),
+              ],
+            ),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+
+      // Call Rust export function
+      final exportPath = await exportLogsToFile();
+
+      // Show success dialog with path
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.green),
+                SizedBox(width: 8),
+                Text('Logs Exported Successfully'),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'All logs have been consolidated and exported to:',
+                  style: TextStyle(fontSize: 14),
+                ),
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: SelectableText(
+                    exportPath,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'You can share this file for troubleshooting.',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Close'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      // Show error
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to export logs: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
   void _showAboutDialog(BuildContext context) {
     showAboutDialog(
       context: context,
       applicationName: 'Linux Cloud Connector',
-      applicationVersion: '1.2.1',
+      applicationVersion: '1.4.0',
       applicationLegalese: '© 2025 Jordi Lopez Reyes',
       applicationIcon: const Icon(Icons.cloud_circle, size: 48, color: Colors.blueAccent),
       children: [
@@ -286,13 +394,39 @@ class _ResourceTreeState extends ConsumerState<ResourceTree> {
                   dense: true,
                   selected: isSelected,
                   selectedTileColor: Colors.blue.withValues(alpha: 0.1),
-                  leading: Icon(
-                    Icons.computer, 
-                    size: 18, 
-                    color: isConnected ? Colors.green : (instance.status == "RUNNING" ? Colors.blueGrey : Colors.grey)
+                  leading: Stack(
+                    children: [
+                      Icon(
+                        Icons.computer,
+                        size: 18,
+                        color: isConnected ? Colors.green : (instance.status == "RUNNING" ? Colors.blueGrey : Colors.grey)
+                      ),
+                      // Health indicator badge
+                      if (isConnected)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: Colors.green.shade700,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: Colors.white, width: 1),
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                   title: Text(instance.name),
-                  subtitle: Text(instance.status, style: const TextStyle(fontSize: 10)),
+                  subtitle: Text(
+                    isConnected ? 'RUNNING • Tunnel Active' : instance.status,
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: isConnected ? Colors.green.shade700 : null,
+                      fontWeight: isConnected ? FontWeight.bold : null,
+                    ),
+                  ),
                   onTap: () {
                     ref.read(selectedInstanceProvider.notifier).select(instance);
                   },
@@ -366,29 +500,9 @@ class InstanceDetailPane extends ConsumerWidget {
                child: Row(children: [const Icon(Icons.error, color: Colors.red), const SizedBox(width: 8), Expanded(child: SelectableText(errorMessage))]),
              ),
 
-          if (isConnected) ...[
+          if (isConnected || myConnection?.status == 'error') ...[
              const SizedBox(height: 16),
-             Container(
-               padding: const EdgeInsets.all(12),
-               decoration: BoxDecoration(
-                 color: Colors.green.shade50,
-                 border: Border.all(color: Colors.green.shade200),
-                 borderRadius: BorderRadius.circular(8),
-               ),
-               child: Row(
-                 children: [
-                   const Icon(Icons.check_circle, color: Colors.green),
-                   const SizedBox(width: 12),
-                   Column(
-                     crossAxisAlignment: CrossAxisAlignment.start,
-                     children: [
-                       const Text("Tunnel Active", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green)),
-                       Text("Listening on localhost:${myConnection!.port}", style: const TextStyle(color: Colors.black87)),
-                     ],
-                   )
-                 ],
-               ),
-             )
+             _buildTunnelDashboard(context, myConnection!),
           ],
 
           const SizedBox(height: 32),
@@ -427,14 +541,21 @@ class InstanceDetailPane extends ConsumerWidget {
                 },
               ),
                _ActionButton(
-                icon: isConnected ? Icons.link_off : Icons.link,
-                label: isConnected ? "Disconnect Tunnel" : "Create Tunnel",
-                backgroundColor: isConnected ? Colors.red.shade50 : null,
-                foregroundColor: isConnected ? Colors.red : null,
-                onPressed: (isConnecting) ? null : () {
+                icon: isConnected ? Icons.link_off : Icons.network_check,
+                label: isConnected ? "Disconnect Tunnel" : "Test IAP Connection",
+                backgroundColor: isConnected ? Colors.red.shade50 : Colors.blue.shade50,
+                foregroundColor: isConnected ? Colors.red : Colors.blue.shade700,
+                onPressed: (isConnecting) ? null : () async {
                    if (isConnected) {
                      ref.read(activeConnectionsProvider.notifier).disconnect(selectedInstance.name);
                    } else {
+                     // Test IAP connectivity
+                     ScaffoldMessenger.of(context).showSnackBar(
+                       const SnackBar(
+                         content: Text("Testing IAP connection... This verifies if IAP is properly configured."),
+                         duration: Duration(seconds: 2),
+                       )
+                     );
                      ref.read(activeConnectionsProvider.notifier).connect(selectedProject, selectedInstance.zone, selectedInstance.name);
                    }
                 },
@@ -570,7 +691,209 @@ class InstanceDetailPane extends ConsumerWidget {
       },
     );
   }
+
+  /// Build comprehensive tunnel status dashboard with metrics
+  Widget _buildTunnelDashboard(BuildContext context, TunnelState tunnel) {
+    // Determine health status color and icon
+    final bool isHealthy = tunnel.status == 'connected' && tunnel.error == null;
+    final bool isError = tunnel.status == 'error';
+    final Color statusColor = isError ? Colors.red : (isHealthy ? Colors.green : Colors.orange);
+    final Color bgColor = isError ? Colors.red.shade50 : (isHealthy ? Colors.green.shade50 : Colors.orange.shade50);
+    final Color borderColor = isError ? Colors.red.shade200 : (isHealthy ? Colors.green.shade200 : Colors.orange.shade200);
+    final IconData statusIcon = isError ? Icons.error : (isHealthy ? Icons.check_circle : Icons.warning);
+    final String statusText = isError ? 'Unhealthy' : (isHealthy ? 'Healthy' : 'Degraded');
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        border: Border.all(color: borderColor, width: 1.5),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header with status
+          Row(
+            children: [
+              Icon(statusIcon, color: statusColor, size: 28),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'IAP Tunnel Status',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: statusColor.withValues(alpha: 0.9),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        // Status badge
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: statusColor,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                isHealthy ? Icons.favorite : Icons.warning_amber,
+                                size: 12,
+                                color: Colors.white,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                statusText,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    if (tunnel.port != null)
+                      Text(
+                        'localhost:${tunnel.port}',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: statusColor.withValues(alpha: 0.7),
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 16),
+          const Divider(height: 1),
+          const SizedBox(height: 16),
+
+          // Metrics Grid
+          Row(
+            children: [
+              // Uptime metric
+              Expanded(
+                child: _MetricCard(
+                  icon: Icons.schedule,
+                  label: 'Uptime',
+                  value: tunnel.uptime,
+                  color: statusColor,
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Last health check metric
+              Expanded(
+                child: _MetricCard(
+                  icon: Icons.health_and_safety,
+                  label: 'Last Check',
+                  value: tunnel.lastCheckRelative,
+                  color: statusColor,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 12),
+
+          // Monitoring info
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.autorenew, size: 14, color: Colors.black.withValues(alpha: 0.5)),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Auto-monitoring every 30 seconds',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.black.withValues(alpha: 0.6),
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
+/// Metric card widget for tunnel dashboard
+class _MetricCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _MetricCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.7),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: color.withValues(alpha: 0.7)),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.black.withValues(alpha: 0.6),
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: color.withValues(alpha: 0.9),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ActionButton extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -631,7 +954,10 @@ class ProjectSelector extends ConsumerWidget {
             return DropdownMenuItem(
               value: p.projectId,
               child: Text(
-                "${p.name ?? p.projectId}", 
+                // Show both name and projectId for clarity
+                p.name != null && p.name != p.projectId
+                    ? "${p.name} (${p.projectId})"
+                    : p.projectId,
                 overflow: TextOverflow.ellipsis,
               ),
             );

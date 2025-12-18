@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../bridge/api.dart';
@@ -67,16 +68,127 @@ class TunnelState {
   final String status; // 'disconnected', 'connecting', 'connected', 'error'
   final int? port;
   final String? error;
+  final DateTime? createdAt; // When the tunnel was established
+  final DateTime? lastHealthCheck; // Last health verification timestamp
 
-  const TunnelState({this.status = 'disconnected', this.port, this.error});
+  const TunnelState({
+    this.status = 'disconnected',
+    this.port,
+    this.error,
+    this.createdAt,
+    this.lastHealthCheck,
+  });
+
+  /// Calculate tunnel uptime in a human-readable format
+  String get uptime {
+    if (createdAt == null) return 'N/A';
+    final duration = DateTime.now().difference(createdAt!);
+
+    if (duration.inHours > 0) {
+      return '${duration.inHours}h ${duration.inMinutes.remainder(60)}m';
+    } else if (duration.inMinutes > 0) {
+      return '${duration.inMinutes}m ${duration.inSeconds.remainder(60)}s';
+    } else {
+      return '${duration.inSeconds}s';
+    }
+  }
+
+  /// Get last health check as relative time
+  String get lastCheckRelative {
+    if (lastHealthCheck == null) return 'Never';
+    final duration = DateTime.now().difference(lastHealthCheck!);
+
+    if (duration.inMinutes > 0) {
+      return '${duration.inMinutes}m ago';
+    } else {
+      return '${duration.inSeconds}s ago';
+    }
+  }
 }
 
 // Mapa: InstanceName -> TunnelState
 final activeConnectionsProvider = NotifierProvider<ConnectionsNotifier, Map<String, TunnelState>>(ConnectionsNotifier.new);
 
 class ConnectionsNotifier extends Notifier<Map<String, TunnelState>> {
+  Timer? _healthCheckTimer;
+
   @override
-  Map<String, TunnelState> build() => {};
+  Map<String, TunnelState> build() {
+    // Start health check timer: check every 30 seconds
+    _healthCheckTimer = Timer.periodic(
+      const Duration(seconds: 30),
+      _checkAllTunnels,
+    );
+
+    // Cancel timer when notifier is disposed
+    ref.onDispose(() {
+      _healthCheckTimer?.cancel();
+    });
+
+    return {};
+  }
+
+  /// Periodic health check for all active tunnels
+  Future<void> _checkAllTunnels(Timer timer) async {
+    final currentConnections = {...state};
+
+    for (var entry in currentConnections.entries) {
+      final instanceName = entry.key;
+      final tunnelState = entry.value;
+
+      // Only check tunnels marked as 'connected'
+      if (tunnelState.status == 'connected') {
+        try {
+          final isHealthy = await checkConnectionHealth(
+            instanceName: instanceName,
+          );
+
+          if (!isHealthy) {
+            // Tunnel died! Update state to error
+            debugPrint('⚠️ HEALTH CHECK FAILED: Tunnel for $instanceName is unhealthy (process dead or port not listening)');
+
+            state = {
+              ...state,
+              instanceName: TunnelState(
+                status: 'error',
+                port: tunnelState.port,
+                error: 'Tunnel became unhealthy (process died or port stopped listening)',
+                createdAt: tunnelState.createdAt, // Preserve creation time
+                lastHealthCheck: DateTime.now(), // Update check time
+              ),
+            };
+          } else {
+            // Tunnel is healthy - update last health check time
+            state = {
+              ...state,
+              instanceName: TunnelState(
+                status: 'connected',
+                port: tunnelState.port,
+                error: tunnelState.error != null ? null : tunnelState.error, // Clear error if it existed
+                createdAt: tunnelState.createdAt, // Preserve creation time
+                lastHealthCheck: DateTime.now(), // Update check time
+              ),
+            };
+          }
+        } catch (e) {
+          // Health check itself failed (e.g., tunnel doesn't exist)
+          debugPrint('Health check error for $instanceName: $e');
+
+          // Mark as error if it was connected
+          state = {
+            ...state,
+            instanceName: TunnelState(
+              status: 'error',
+              port: tunnelState.port,
+              error: 'Health check failed: ${e.toString()}',
+              createdAt: tunnelState.createdAt, // Preserve creation time
+              lastHealthCheck: DateTime.now(), // Update check time
+            ),
+          };
+        }
+      }
+    }
+  }
 
   Future<void> connect(String projectId, String zone, String instanceName) async {
     // Actualizar estado de ESTA instancia a 'connecting'
@@ -94,15 +206,24 @@ class ConnectionsNotifier extends Notifier<Map<String, TunnelState>> {
       );
       
       // Actualizar a 'connected'
+      final now = DateTime.now();
       state = {
         ...state,
-        instanceName: TunnelState(status: 'connected', port: port)
+        instanceName: TunnelState(
+          status: 'connected',
+          port: port,
+          createdAt: now, // Set creation time
+          lastHealthCheck: now, // Initial health check time
+        )
       };
     } catch (e) {
       // Error solo en esta instancia
       state = {
         ...state,
-        instanceName: TunnelState(status: 'error', error: e.toString())
+        instanceName: TunnelState(
+          status: 'error',
+          error: e.toString(),
+        )
       };
       // No hacemos rethrow para no romper la UI general, el estado refleja el error
     }
@@ -152,9 +273,11 @@ class ConnectionsNotifier extends Notifier<Map<String, TunnelState>> {
            state = {
              ...state,
              instanceName: TunnelState(
-               status: 'connected', 
-               port: activeTunnel?.port, 
-               error: "Launch Failed: $e" // Show transient error
+               status: 'connected',
+               port: activeTunnel?.port,
+               error: "Launch Failed: $e", // Show transient error
+               createdAt: activeTunnel?.createdAt, // Preserve creation time
+               lastHealthCheck: activeTunnel?.lastHealthCheck, // Preserve last check
              )
            };
         }

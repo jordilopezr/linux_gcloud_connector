@@ -1,6 +1,7 @@
 use crate::gcloud;
 use crate::tunnel;
 use crate::remmina;
+use crate::logging;
 
 // Re-export structs for FRB
 pub use crate::gcloud::GcpProject;
@@ -44,6 +45,10 @@ pub fn stop_connection(instance_name: String) -> anyhow::Result<()> {
     tunnel::stop_tunnel(&instance_name)
 }
 
+pub fn check_connection_health(instance_name: String) -> anyhow::Result<bool> {
+    tunnel::check_tunnel_health(&instance_name)
+}
+
 // Remote Desktop
 pub fn launch_rdp(port: u16, instance_name: String, settings: RdpSettings) -> anyhow::Result<()> {
     remmina::launch_remmina(port, &instance_name, settings)
@@ -52,4 +57,19 @@ pub fn launch_rdp(port: u16, instance_name: String, settings: RdpSettings) -> an
 // SSH
 pub fn launch_ssh(project_id: String, zone: String, instance_name: String) -> anyhow::Result<()> {
     gcloud::launch_ssh(&project_id, &zone, &instance_name)
+}
+
+// Logging
+pub fn init_logging_system() -> anyhow::Result<()> {
+    logging::init_logging()
+}
+
+pub fn export_logs_to_file() -> anyhow::Result<String> {
+    let path = logging::export_logs()?;
+    Ok(path.to_string_lossy().to_string())
+}
+
+pub fn get_log_file_path() -> anyhow::Result<String> {
+    let path = logging::get_current_log_path()?;
+    Ok(path.to_string_lossy().to_string())
 }

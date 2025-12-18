@@ -2,6 +2,10 @@ use std::fs::{self, File};
 use std::io::Write;
 use std::process::{Command, Stdio};
 use anyhow::{Result, anyhow};
+use tracing;
+
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
 
 #[derive(Default, Debug)]
 pub struct RdpSettings {
@@ -14,7 +18,12 @@ pub struct RdpSettings {
 }
 
 pub fn launch_remmina(port: u16, instance_name: &str, settings: RdpSettings) -> Result<()> {
-    println!("RUST: Preparing to launch Remmina for {} on port {} with settings: {:?}", instance_name, port, settings);
+    tracing::info!(
+        instance_name = instance_name,
+        port = port,
+        fullscreen = settings.fullscreen,
+        "Launching Remmina RDP client"
+    );
     
     let mut config_path_opt = None;
 
@@ -55,13 +64,28 @@ enable-autostart=1
 
         if let Ok(mut file) = File::create(&file_path)
             && file.write_all(content.as_bytes()).is_ok() {
+                // SECURITY: Set file permissions to 0600 (owner read/write only)
+                // This prevents other users from reading RDP credentials
+                #[cfg(unix)]
+                {
+                    if let Err(e) = fs::set_permissions(&file_path, fs::Permissions::from_mode(0o600)) {
+                        tracing::warn!(
+                            error = %e,
+                            "Could not set secure permissions (0600) on .remmina file"
+                        );
+                        // Continue anyway, file was created
+                    } else {
+                        tracing::debug!("Secure permissions (0600) set on .remmina file");
+                    }
+                }
+
                 config_path_opt = Some(file_path);
             }
     }
 
     // 1. Try Native
     if let Some(ref path) = config_path_opt {
-        println!("RUST: Attempting Native Remmina with file...");
+        tracing::debug!("Attempting native Remmina with config file");
         let native = Command::new("remmina")
             .arg("-c")
             .arg(path)
@@ -70,14 +94,14 @@ enable-autostart=1
             .spawn();
 
         if native.is_ok() {
-            println!("RUST: Native Remmina launched.");
+            tracing::info!("Native Remmina launched successfully");
             return Ok(());
         }
     }
 
     // 2. Try Flatpak with File Forwarding
     if let Some(ref path) = config_path_opt {
-        println!("RUST: Attempting Flatpak Remmina with File Forwarding...");
+        tracing::debug!("Attempting Flatpak Remmina with file forwarding");
         // Note: inheriting stdio to debug why it fails
         let flatpak = Command::new("flatpak")
             .args(["run", "--file-forwarding", "org.remmina.Remmina"])
@@ -90,21 +114,21 @@ enable-autostart=1
             .spawn();
 
         if flatpak.is_ok() {
-            println!("RUST: Flatpak launched (File mode). Check logs above if UI doesn't appear.");
+            tracing::info!("Flatpak Remmina launched (file mode)");
             // We return Ok here because spawn succeeded, but Remmina might fail later.
             // If it fails immediately, the logs will show it.
-            // But let's add a tiny fallback: if spawn is ok, we assume success. 
+            // But let's add a tiny fallback: if spawn is ok, we assume success.
             // The user will report if it crashes.
-            return Ok(()); 
-        } else {
-             println!("RUST: Flatpak File launch error: {:?}", flatpak.err());
+            return Ok(());
+        } else if let Err(e) = flatpak {
+             tracing::warn!(error = %e, "Flatpak file mode launch failed");
         }
     }
 
     // 3. Fallback: Flatpak URI (Bypasses file permission issues entirely)
-    println!("RUST: Fallback to Flatpak URI mode...");
+    tracing::debug!("Falling back to Flatpak URI mode");
     let uri = format!("rdp://127.0.0.1:{}", port);
-    
+
     let flatpak_uri = Command::new("flatpak")
         .args(["run", "org.remmina.Remmina", "-c", &uri])
         .stdout(Stdio::inherit())
@@ -113,9 +137,12 @@ enable-autostart=1
 
     match flatpak_uri {
         Ok(_) => {
-            println!("RUST: Flatpak launched (URI mode).");
+            tracing::info!("Flatpak Remmina launched (URI mode)");
             Ok(())
         },
-        Err(e) => Err(anyhow!("All launch attempts failed. Error: {}", e))
+        Err(e) => {
+            tracing::error!(error = %e, "All Remmina launch attempts failed");
+            Err(anyhow!("All launch attempts failed. Error: {}", e))
+        }
     }
 }

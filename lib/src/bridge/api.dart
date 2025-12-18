@@ -41,6 +41,11 @@ Future<int> startConnection({
 Future<void> stopConnection({required String instanceName}) =>
     RustLib.instance.api.crateApiStopConnection(instanceName: instanceName);
 
+Future<bool> checkConnectionHealth({required String instanceName}) => RustLib
+    .instance
+    .api
+    .crateApiCheckConnectionHealth(instanceName: instanceName);
+
 Future<void> launchRdp({
   required int port,
   required String instanceName,
@@ -60,3 +65,12 @@ Future<void> launchSsh({
   zone: zone,
   instanceName: instanceName,
 );
+
+Future<void> initLoggingSystem() =>
+    RustLib.instance.api.crateApiInitLoggingSystem();
+
+Future<String> exportLogsToFile() =>
+    RustLib.instance.api.crateApiExportLogsToFile();
+
+Future<String> getLogFilePath() =>
+    RustLib.instance.api.crateApiGetLogFilePath();

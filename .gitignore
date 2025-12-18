@@ -50,3 +50,7 @@ build_deb/
 *.deb
 *.deb
 linux-cloud-connector_1.0.0_amd64.deb
+
+# Project Status & Planning (local only)
+status.md
+roadmap.md

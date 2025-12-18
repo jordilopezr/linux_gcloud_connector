@@ -66,7 +66,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => 1138423946;
+  int get rustContentHash => 2061269826;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -77,15 +77,23 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
+  Future<bool> crateApiCheckConnectionHealth({required String instanceName});
+
   Future<bool> crateApiCheckGcloudAuth();
 
   Future<bool> crateApiCheckGcloudInstalled();
+
+  Future<String> crateApiExportLogsToFile();
 
   Future<void> crateApiGcloudLogin();
 
   Future<void> crateApiGcloudLogout();
 
+  Future<String> crateApiGetLogFilePath();
+
   Future<String> crateApiGreet();
+
+  Future<void> crateApiInitLoggingSystem();
 
   Future<void> crateApiLaunchRdp({
     required int port,
@@ -122,6 +130,37 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
+  Future<bool> crateApiCheckConnectionHealth({required String instanceName}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(instanceName, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 1,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_bool,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiCheckConnectionHealthConstMeta,
+        argValues: [instanceName],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiCheckConnectionHealthConstMeta =>
+      const TaskConstMeta(
+        debugName: "check_connection_health",
+        argNames: ["instanceName"],
+      );
+
+  @override
   Future<bool> crateApiCheckGcloudAuth() {
     return handler.executeNormal(
       NormalTask(
@@ -130,7 +169,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 1,
+            funcId: 2,
             port: port_,
           );
         },
@@ -157,7 +196,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 2,
+            funcId: 3,
             port: port_,
           );
         },
@@ -176,6 +215,33 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "check_gcloud_installed", argNames: []);
 
   @override
+  Future<String> crateApiExportLogsToFile() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 4,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiExportLogsToFileConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiExportLogsToFileConstMeta =>
+      const TaskConstMeta(debugName: "export_logs_to_file", argNames: []);
+
+  @override
   Future<void> crateApiGcloudLogin() {
     return handler.executeNormal(
       NormalTask(
@@ -184,7 +250,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 3,
+            funcId: 5,
             port: port_,
           );
         },
@@ -211,7 +277,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 4,
+            funcId: 6,
             port: port_,
           );
         },
@@ -230,6 +296,33 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "gcloud_logout", argNames: []);
 
   @override
+  Future<String> crateApiGetLogFilePath() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 7,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiGetLogFilePathConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiGetLogFilePathConstMeta =>
+      const TaskConstMeta(debugName: "get_log_file_path", argNames: []);
+
+  @override
   Future<String> crateApiGreet() {
     return handler.executeNormal(
       NormalTask(
@@ -238,7 +331,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 5,
+            funcId: 8,
             port: port_,
           );
         },
@@ -257,6 +350,33 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "greet", argNames: []);
 
   @override
+  Future<void> crateApiInitLoggingSystem() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 9,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiInitLoggingSystemConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiInitLoggingSystemConstMeta =>
+      const TaskConstMeta(debugName: "init_logging_system", argNames: []);
+
+  @override
   Future<void> crateApiLaunchRdp({
     required int port,
     required String instanceName,
@@ -272,7 +392,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 6,
+            funcId: 10,
             port: port_,
           );
         },
@@ -308,7 +428,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 7,
+            funcId: 11,
             port: port_,
           );
         },
@@ -338,7 +458,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 8,
+            funcId: 12,
             port: port_,
           );
         },
@@ -365,7 +485,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 9,
+            funcId: 13,
             port: port_,
           );
         },
@@ -401,7 +521,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 10,
+            funcId: 14,
             port: port_,
           );
         },
@@ -431,7 +551,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 11,
+            funcId: 15,
             port: port_,
           );
         },
