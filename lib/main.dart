@@ -437,7 +437,9 @@ class _ResourceTreeState extends ConsumerState<ResourceTree> {
                   ),
                   title: Text(instance.name),
                   subtitle: Text(
-                    isConnected ? 'RUNNING • Tunnel Active' : instance.status,
+                    isConnected 
+                        ? 'RUNNING • Tunnel Active • ${instance.machineType}' 
+                        : '${instance.status} • ${instance.machineType}',
                     style: TextStyle(
                       fontSize: 10,
                       color: isConnected ? Colors.green.shade700 : null,
@@ -504,7 +506,21 @@ class InstanceDetailPane extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(selectedInstance.name, style: Theme.of(context).textTheme.headlineSmall),
-                  Text("${selectedInstance.zone}  •  ${selectedInstance.status}", style: Theme.of(context).textTheme.bodyMedium),
+                  Row(
+                    children: [
+                       Container(
+                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                         decoration: BoxDecoration(
+                           color: Colors.grey.shade200,
+                           borderRadius: BorderRadius.circular(4),
+                           border: Border.all(color: Colors.grey.shade400),
+                         ),
+                         child: Text(selectedInstance.machineType, style: const TextStyle(fontSize: 12, fontFamily: 'monospace', fontWeight: FontWeight.bold)),
+                       ),
+                       const SizedBox(width: 8),
+                       Text("${selectedInstance.zone}  •  ${selectedInstance.status}", style: Theme.of(context).textTheme.bodyMedium),
+                    ],
+                  ),
                 ],
               ),
             ],

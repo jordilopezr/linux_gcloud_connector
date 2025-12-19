@@ -18,13 +18,16 @@ pub struct GcpInstance {
     pub name: String,
     pub status: String,
     pub zone: String,
+    pub machine_type: String,
 }
 
 #[derive(Deserialize)]
 struct RawInstance {
     name: String,
     status: String,
-    zone: String, 
+    zone: String,
+    #[serde(rename = "machineType")]
+    machine_type: Option<String>, // Option because stopped instances might behave differently, or for safety
 }
 
 pub fn is_gcloud_installed() -> bool {
@@ -111,10 +114,17 @@ async fn get_instances_async(project_id: &str) -> Result<Vec<GcpInstance>> {
                 raw.zone.split('/').last().unwrap_or(&raw.zone).to_string()
             });
 
+        let machine_type = raw.machine_type
+            .as_deref()
+            .map(|url| url.split('/').last().unwrap_or(url))
+            .unwrap_or("Unknown")
+            .to_string();
+
         GcpInstance {
             name: raw.name,
             status: raw.status,
             zone: zone_name,
+            machine_type,
         }
     }).collect();
 

@@ -10,15 +10,18 @@ class GcpInstance {
   final String name;
   final String status;
   final String zone;
+  final String machineType;
 
   const GcpInstance({
     required this.name,
     required this.status,
     required this.zone,
+    required this.machineType,
   });
 
   @override
-  int get hashCode => name.hashCode ^ status.hashCode ^ zone.hashCode;
+  int get hashCode =>
+      name.hashCode ^ status.hashCode ^ zone.hashCode ^ machineType.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -27,7 +30,8 @@ class GcpInstance {
           runtimeType == other.runtimeType &&
           name == other.name &&
           status == other.status &&
-          zone == other.zone;
+          zone == other.zone &&
+          machineType == other.machineType;
 }
 
 class GcpProject {

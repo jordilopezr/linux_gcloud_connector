@@ -607,10 +607,12 @@ impl SseDecode for crate::gcloud::GcpInstance {
         let mut var_name = <String>::sse_decode(deserializer);
         let mut var_status = <String>::sse_decode(deserializer);
         let mut var_zone = <String>::sse_decode(deserializer);
+        let mut var_machineType = <String>::sse_decode(deserializer);
         return crate::gcloud::GcpInstance {
             name: var_name,
             status: var_status,
             zone: var_zone,
+            machine_type: var_machineType,
         };
     }
 }
@@ -787,6 +789,7 @@ impl flutter_rust_bridge::IntoDart for crate::gcloud::GcpInstance {
             self.name.into_into_dart().into_dart(),
             self.status.into_into_dart().into_dart(),
             self.zone.into_into_dart().into_dart(),
+            self.machine_type.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -863,6 +866,7 @@ impl SseEncode for crate::gcloud::GcpInstance {
         <String>::sse_encode(self.name, serializer);
         <String>::sse_encode(self.status, serializer);
         <String>::sse_encode(self.zone, serializer);
+        <String>::sse_encode(self.machine_type, serializer);
     }
 }
 
