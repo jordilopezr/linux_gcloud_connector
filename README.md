@@ -4,15 +4,23 @@
 
 Desarrollada por **Jordi Lopez Reyes** con **Flutter** y **Rust** para un rendimiento y seguridad óptimos.
 
-![Status](https://img.shields.io/badge/Status-Stable%20v1.4.0-brightgreen)
+![Status](https://img.shields.io/badge/Status-Stable%20v1.5.0-brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-Linux-blue)
 ![License](https://img.shields.io/badge/License-MIT-purple)
 ![Security](https://img.shields.io/badge/Security-Hardened-success)
-![Observability](https://img.shields.io/badge/Observability-Enterprise-blue)
+![Multi-Tunnel](https://img.shields.io/badge/Multi--Tunnel-Enabled-blue)
 
 <img width="1024" height="768" alt="image" src="https://github.com/user-attachments/assets/b510f43b-2a42-462b-9a4e-bfe8618068a5" />
 
 ## ✨ Características Clave
+
+### 🚀 Generic Port Forwarding & Multi-Tunnel (v1.5.0)
+*   **🔌 Soporte Universal:** Conecta a CUALQUIER servicio TCP vía IAP (PostgreSQL, MySQL, HTTP, Redis, MongoDB, etc.)
+*   **♾️ Túneles Simultáneos:** Ilimitados túneles por VM (ej: RDP + PostgreSQL + HTTP al mismo tiempo)
+*   **🎛️ Custom Tunnel Dialog:** 8 presets de servicios comunes + entrada de puerto personalizado
+*   **🎯 Gestión Individual:** Desconecta túneles específicos sin afectar los demás
+*   **📊 Dashboard Multi-Túnel:** Visualiza todos los túneles activos con puerto remoto y estado de salud
+*   **✅ Port Validation:** Validación en tiempo real (1-65535) con feedback visual
 
 ### 📊 Observabilidad y Monitoreo (v1.4.0)
 *   **📝 Logging Estructurado:** Sistema persistente con rotación automática (10MB, 5 archivos)
@@ -31,7 +39,7 @@ Desarrollada por **Jordi Lopez Reyes** con **Flutter** y **Rust** para un rendim
 *   **🔑 Gestión de Credenciales:** Guarda usuarios, contraseñas y dominios de forma segura (encriptado con `libsecret`).
 *   **💾 Persistencia:** Recuerda tu último proyecto seleccionado y configuración.
 *   **🔒 Auth Integration:** Login integrado con Google Cloud (`gcloud auth login`).
-*   **🛡️ IAP Tunneling:** Gestión automática de múltiples túneles TCP seguros con monitoreo de salud.
+*   **🛡️ IAP Multi-Tunneling:** Gestión automática de túneles TCP ilimitados por VM con monitoreo de salud independiente.
 *   **🖥️ Smart RDP:** Lanza **Remmina** automáticamente con configuraciones avanzadas (pantalla completa, resolución).
 *   **💻 SSH Support:** Detecta tu terminal favorita (`gnome-terminal`, `konsole`, etc.) y lanza sesiones SSH nativas.
 *   **⚡ Native Backend:** Lógica crítica escrita en Rust para máxima velocidad y seguridad.
