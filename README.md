@@ -88,4 +88,5 @@ flutter run -d linux
 Este proyecto es compatible con macOS (Intel/Silicon) con ajustes mínimos en el lanzador RDP (usando `open` en lugar de `remmina`) y en la configuración de Xcode.
 
 ---
+La documentacion ha sido revisada y Optimizada utilizando Claude de Anthropic 
 © 2025 Jordi Lopez Reyes. Distribuido bajo licencia MIT.
