@@ -68,11 +68,15 @@ fn wire__crate__api__check_connection_health_impl(
             let mut deserializer =
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_instance_name = <String>::sse_decode(&mut deserializer);
+            let api_remote_port = <u16>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || {
-                        let output_ok = crate::api::check_connection_health(api_instance_name)?;
+                        let output_ok = crate::api::check_connection_health(
+                            api_instance_name,
+                            api_remote_port,
+                        )?;
                         Ok(output_ok)
                     })(),
                 )
@@ -557,11 +561,13 @@ fn wire__crate__api__stop_connection_impl(
             let mut deserializer =
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             let api_instance_name = <String>::sse_decode(&mut deserializer);
+            let api_remote_port = <u16>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
                 transform_result_sse::<_, flutter_rust_bridge::for_generated::anyhow::Error>(
                     (move || {
-                        let output_ok = crate::api::stop_connection(api_instance_name)?;
+                        let output_ok =
+                            crate::api::stop_connection(api_instance_name, api_remote_port)?;
                         Ok(output_ok)
                     })(),
                 )

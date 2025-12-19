@@ -1,11 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'src/bridge/api.dart';
-import 'src/bridge/gcloud.dart';
-import 'src/bridge/remmina.dart';
-import 'src/bridge/frb_generated.dart';
+import 'src/bridge/api.dart/api.dart';
+import 'src/bridge/api.dart/gcloud.dart';
+import 'src/bridge/api.dart/remmina.dart';
+import 'src/bridge/api.dart/frb_generated.dart';
 import 'src/features/gcloud_provider.dart';
 import 'src/services/storage_service.dart';
+
+/// Helper: Get all active tunnels for a given instance
+List<MapEntry<String, TunnelState>> getTunnelsForInstance(
+  Map<String, TunnelState> connections,
+  String instanceName,
+) {
+  return connections.entries
+      .where((entry) => entry.key.startsWith('$instanceName:'))
+      .toList();
+}
+
+/// Helper: Check if instance has any active tunnel
+bool hasAnyActiveTunnel(Map<String, TunnelState> connections, String instanceName) {
+  return connections.keys.any((key) =>
+      key.startsWith('$instanceName:') &&
+      connections[key]?.status == 'connected');
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -388,8 +405,8 @@ class _ResourceTreeState extends ConsumerState<ResourceTree> {
               title: Text(zone, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
               children: zoneInstances.map((instance) {
                 final isSelected = selectedInstance?.name == instance.name;
-                final isConnected = connections[instance.name]?.status == 'connected';
-                
+                final isConnected = hasAnyActiveTunnel(connections, instance.name);
+
                 return ListTile(
                   dense: true,
                   selected: isSelected,
@@ -467,10 +484,11 @@ class InstanceDetailPane extends ConsumerWidget {
       );
     }
 
-    final myConnection = connections[selectedInstance.name];
-    final isConnected = myConnection?.status == 'connected';
-    final isConnecting = myConnection?.status == 'connecting';
-    final errorMessage = myConnection?.error;
+    // Get ALL tunnels for this instance
+    final activeTunnels = getTunnelsForInstance(connections, selectedInstance.name);
+    final isConnected = activeTunnels.any((t) => t.value.status == 'connected');
+    final isConnecting = activeTunnels.any((t) => t.value.status == 'connecting');
+    final errorTunnels = activeTunnels.where((t) => t.value.error != null).toList();
     final isRunning = selectedInstance.status == "RUNNING";
 
     return SingleChildScrollView(
@@ -492,17 +510,23 @@ class InstanceDetailPane extends ConsumerWidget {
             ],
           ),
           const SizedBox(height: 32),
-          
-          if (errorMessage != null)
-             Container(
-               padding: const EdgeInsets.all(8),
-               color: Colors.red.shade100,
-               child: Row(children: [const Icon(Icons.error, color: Colors.red), const SizedBox(width: 8), Expanded(child: SelectableText(errorMessage))]),
-             ),
 
-          if (isConnected || myConnection?.status == 'error') ...[
-             const SizedBox(height: 16),
-             _buildTunnelDashboard(context, myConnection!),
+          // Show all active tunnels for this instance
+          if (activeTunnels.isNotEmpty) ...[
+            const Text("Active Tunnels", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 12),
+            ...activeTunnels.map((tunnelEntry) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: _buildTunnelDashboard(
+                  context,
+                  tunnelEntry.value,
+                  tunnelEntry.key,
+                  selectedInstance.name,
+                  ref,
+                ),
+              );
+            }),
           ],
 
           const SizedBox(height: 32),
@@ -540,14 +564,34 @@ class InstanceDetailPane extends ConsumerWidget {
                    }
                 },
               ),
+              _ActionButton(
+                icon: Icons.settings_ethernet,
+                label: "Custom Tunnel",
+                backgroundColor: Colors.purple.shade50,
+                foregroundColor: Colors.purple.shade700,
+                onPressed: (!isRunning || isConnecting) ? null : () async {
+                  final selectedPort = await _showCustomTunnelDialog(context);
+                  if (selectedPort != null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Creating tunnel to port $selectedPort..."))
+                    );
+                    await ref.read(activeConnectionsProvider.notifier).connect(
+                      selectedProject,
+                      selectedInstance.zone,
+                      selectedInstance.name,
+                      remotePort: selectedPort,
+                    );
+                  }
+                },
+              ),
                _ActionButton(
                 icon: isConnected ? Icons.link_off : Icons.network_check,
-                label: isConnected ? "Disconnect Tunnel" : "Test IAP Connection",
+                label: isConnected ? "Disconnect All Tunnels" : "Test IAP Connection",
                 backgroundColor: isConnected ? Colors.red.shade50 : Colors.blue.shade50,
                 foregroundColor: isConnected ? Colors.red : Colors.blue.shade700,
                 onPressed: (isConnecting) ? null : () async {
                    if (isConnected) {
-                     ref.read(activeConnectionsProvider.notifier).disconnect(selectedInstance.name);
+                     await ref.read(activeConnectionsProvider.notifier).disconnectAllForInstance(selectedInstance.name);
                    } else {
                      // Test IAP connectivity
                      ScaffoldMessenger.of(context).showSnackBar(
@@ -572,6 +616,155 @@ class InstanceDetailPane extends ConsumerWidget {
       ),
     );
   }
+
+  /// Show Custom Tunnel Dialog to select port
+  Future<int?> _showCustomTunnelDialog(BuildContext context) async {
+    int? selectedPort;
+    final customPortController = TextEditingController();
+    bool isCustomPort = false;
+
+    // Common service presets
+    final Map<String, int> servicePresets = {
+      'RDP (Remote Desktop)': 3389,
+      'SSH': 22,
+      'PostgreSQL': 5432,
+      'MySQL/MariaDB': 3306,
+      'HTTP': 8080,
+      'HTTPS': 443,
+      'MongoDB': 27017,
+      'Redis': 6379,
+    };
+
+    if (!context.mounted) return null;
+
+    return showDialog<int>(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Row(
+                children: [
+                  Icon(Icons.settings_ethernet, color: Colors.blue),
+                  SizedBox(width: 8),
+                  Text("Custom Tunnel Configuration"),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Select a service preset or enter a custom port:",
+                      style: TextStyle(fontSize: 14, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Service Preset Chips
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: servicePresets.entries.map((entry) {
+                        final isSelected = selectedPort == entry.value && !isCustomPort;
+                        return ChoiceChip(
+                          label: Text('${entry.key}\n:${entry.value}', textAlign: TextAlign.center),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            setState(() {
+                              if (selected) {
+                                selectedPort = entry.value;
+                                isCustomPort = false;
+                                customPortController.clear();
+                              } else {
+                                selectedPort = null;
+                              }
+                            });
+                          },
+                          selectedColor: Colors.blue.shade100,
+                          labelStyle: TextStyle(
+                            fontSize: 12,
+                            color: isSelected ? Colors.blue.shade900 : Colors.black87,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const SizedBox(height: 8),
+
+                    // Custom Port Input
+                    TextField(
+                      controller: customPortController,
+                      decoration: InputDecoration(
+                        labelText: "Custom Port",
+                        hintText: "Enter port (1-65535)",
+                        prefixIcon: const Icon(Icons.edit),
+                        border: const OutlineInputBorder(),
+                        filled: isCustomPort,
+                        fillColor: isCustomPort ? Colors.blue.shade50 : null,
+                      ),
+                      keyboardType: TextInputType.number,
+                      onChanged: (value) {
+                        setState(() {
+                          final port = int.tryParse(value);
+                          if (port != null && port >= 1 && port <= 65535) {
+                            selectedPort = port;
+                            isCustomPort = true;
+                          } else {
+                            if (isCustomPort) selectedPort = null;
+                          }
+                        });
+                      },
+                    ),
+
+                    if (selectedPort != null) ...[
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.green.shade200),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Selected port: $selectedPort',
+                              style: const TextStyle(
+                                color: Colors.green,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, null),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: selectedPort == null
+                      ? null
+                      : () => Navigator.pop(context, selectedPort),
+                  child: const Text("Connect"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<RdpSettings?> _showConnectionSettingsDialog(BuildContext context, String instanceName) async {
     final userController = TextEditingController();
     final passController = TextEditingController();
@@ -693,7 +886,13 @@ class InstanceDetailPane extends ConsumerWidget {
   }
 
   /// Build comprehensive tunnel status dashboard with metrics
-  Widget _buildTunnelDashboard(BuildContext context, TunnelState tunnel) {
+  Widget _buildTunnelDashboard(
+    BuildContext context,
+    TunnelState tunnel,
+    String tunnelKey,
+    String instanceName,
+    WidgetRef ref,
+  ) {
     // Determine health status color and icon
     final bool isHealthy = tunnel.status == 'connected' && tunnel.error == null;
     final bool isError = tunnel.status == 'error';
@@ -725,7 +924,7 @@ class InstanceDetailPane extends ConsumerWidget {
                     Row(
                       children: [
                         Text(
-                          'IAP Tunnel Status',
+                          'Tunnel → :${tunnel.remotePort ?? "?"}',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -774,6 +973,17 @@ class InstanceDetailPane extends ConsumerWidget {
                       ),
                   ],
                 ),
+              ),
+              // Disconnect button
+              IconButton(
+                icon: const Icon(Icons.close, color: Colors.red),
+                tooltip: 'Disconnect this tunnel',
+                onPressed: () async {
+                  await ref.read(activeConnectionsProvider.notifier).disconnect(
+                    instanceName,
+                    tunnel.remotePort!,
+                  );
+                },
               ),
             ],
           ),

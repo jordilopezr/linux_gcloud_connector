@@ -50,6 +50,11 @@ lazy_static! {
     static ref TUNNELS: Mutex<HashMap<String, IapTunnel>> = Mutex::new(HashMap::new());
 }
 
+/// Creates a unique key for tunnel identification: "instance:port"
+fn make_tunnel_key(instance: &str, remote_port: u16) -> String {
+    format!("{}:{}", instance, remote_port)
+}
+
 pub fn start_tunnel(project: &str, zone: &str, instance: &str, remote_port: u16) -> Result<u16> {
     // SECURITY: Validate all inputs before passing to gcloud command
     validate_project_id(project)?;
@@ -58,8 +63,15 @@ pub fn start_tunnel(project: &str, zone: &str, instance: &str, remote_port: u16)
 
     // Scope para el lock
     {
+        let tunnel_key = make_tunnel_key(instance, remote_port);
         let tunnels = TUNNELS.lock().map_err(|_| anyhow!("Tunnel lock poisoned"))?;
-        if let Some(tunnel) = tunnels.get(instance) {
+        if let Some(tunnel) = tunnels.get(&tunnel_key) {
+            tracing::info!(
+                instance = instance,
+                remote_port = remote_port,
+                local_port = tunnel.local_port,
+                "Tunnel already exists, returning existing local port"
+            );
             return Ok(tunnel.local_port);
         }
     }
@@ -133,36 +145,53 @@ pub fn start_tunnel(project: &str, zone: &str, instance: &str, remote_port: u16)
 
     tracing::info!(
         instance = instance,
-        port = port,
+        remote_port = remote_port,
+        local_port = port,
         "Tunnel health check passed - process alive and port listening"
     );
 
+    let tunnel_key = make_tunnel_key(instance, remote_port);
     let mut tunnels = TUNNELS.lock().map_err(|_| anyhow!("Tunnel lock poisoned"))?;
-    tunnels.insert(instance.to_string(), tunnel);
+    tunnels.insert(tunnel_key, tunnel);
 
     Ok(port)
 }
 
-pub fn stop_tunnel(instance: &str) -> Result<()> {
+pub fn stop_tunnel(instance: &str, remote_port: u16) -> Result<()> {
+    let tunnel_key = make_tunnel_key(instance, remote_port);
     let mut tunnels = TUNNELS.lock().map_err(|_| anyhow!("Tunnel lock poisoned"))?;
-    if let Some(mut tunnel) = tunnels.remove(instance) {
+    if let Some(mut tunnel) = tunnels.remove(&tunnel_key) {
+        tracing::info!(
+            instance = instance,
+            remote_port = remote_port,
+            local_port = tunnel.local_port,
+            "Stopping tunnel"
+        );
         tunnel.stop()?;
+    } else {
+        tracing::warn!(
+            instance = instance,
+            remote_port = remote_port,
+            "Attempted to stop non-existent tunnel"
+        );
     }
     Ok(())
 }
 
 /// Check if a tunnel is healthy (process alive + port listening)
 /// Returns true if healthy, false if dead/unhealthy, error if tunnel doesn't exist
-pub fn check_tunnel_health(instance: &str) -> Result<bool> {
+pub fn check_tunnel_health(instance: &str, remote_port: u16) -> Result<bool> {
+    let tunnel_key = make_tunnel_key(instance, remote_port);
     let mut tunnels = TUNNELS.lock().map_err(|_| anyhow!("Tunnel lock poisoned"))?;
 
-    if let Some(tunnel) = tunnels.get_mut(instance) {
+    if let Some(tunnel) = tunnels.get_mut(&tunnel_key) {
         let is_healthy = tunnel.is_healthy();
 
         // If unhealthy, automatically clean up the dead tunnel
         if !is_healthy {
             tracing::warn!(
                 instance = instance,
+                remote_port = remote_port,
                 "Tunnel is unhealthy - process died or port stopped listening"
             );
             // We can't remove while holding the reference, so we'll mark it for removal
@@ -171,7 +200,7 @@ pub fn check_tunnel_health(instance: &str) -> Result<bool> {
 
         Ok(is_healthy)
     } else {
-        Err(anyhow!("No tunnel exists for instance '{}'", instance))
+        Err(anyhow!("No tunnel exists for instance '{}' on port {}", instance, remote_port))
     }
 }
 

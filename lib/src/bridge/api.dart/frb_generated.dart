@@ -77,7 +77,10 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
 }
 
 abstract class RustLibApi extends BaseApi {
-  Future<bool> crateApiCheckConnectionHealth({required String instanceName});
+  Future<bool> crateApiCheckConnectionHealth({
+    required String instanceName,
+    required int remotePort,
+  });
 
   Future<bool> crateApiCheckGcloudAuth();
 
@@ -118,7 +121,10 @@ abstract class RustLibApi extends BaseApi {
     required int remotePort,
   });
 
-  Future<void> crateApiStopConnection({required String instanceName});
+  Future<void> crateApiStopConnection({
+    required String instanceName,
+    required int remotePort,
+  });
 }
 
 class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
@@ -130,12 +136,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   });
 
   @override
-  Future<bool> crateApiCheckConnectionHealth({required String instanceName}) {
+  Future<bool> crateApiCheckConnectionHealth({
+    required String instanceName,
+    required int remotePort,
+  }) {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(instanceName, serializer);
+          sse_encode_u_16(remotePort, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -148,7 +158,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiCheckConnectionHealthConstMeta,
-        argValues: [instanceName],
+        argValues: [instanceName, remotePort],
         apiImpl: this,
       ),
     );
@@ -157,7 +167,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiCheckConnectionHealthConstMeta =>
       const TaskConstMeta(
         debugName: "check_connection_health",
-        argNames: ["instanceName"],
+        argNames: ["instanceName", "remotePort"],
       );
 
   @override
@@ -542,12 +552,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   );
 
   @override
-  Future<void> crateApiStopConnection({required String instanceName}) {
+  Future<void> crateApiStopConnection({
+    required String instanceName,
+    required int remotePort,
+  }) {
     return handler.executeNormal(
       NormalTask(
         callFfi: (port_) {
           final serializer = SseSerializer(generalizedFrbRustBinding);
           sse_encode_String(instanceName, serializer);
+          sse_encode_u_16(remotePort, serializer);
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
@@ -560,7 +574,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           decodeErrorData: sse_decode_AnyhowException,
         ),
         constMeta: kCrateApiStopConnectionConstMeta,
-        argValues: [instanceName],
+        argValues: [instanceName, remotePort],
         apiImpl: this,
       ),
     );
@@ -568,7 +582,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   TaskConstMeta get kCrateApiStopConnectionConstMeta => const TaskConstMeta(
     debugName: "stop_connection",
-    argNames: ["instanceName"],
+    argNames: ["instanceName", "remotePort"],
   );
 
   @protected

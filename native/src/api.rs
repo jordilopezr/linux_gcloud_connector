@@ -41,12 +41,12 @@ pub fn start_connection(project_id: String, zone: String, instance_name: String,
     tunnel::start_tunnel(&project_id, &zone, &instance_name, remote_port)
 }
 
-pub fn stop_connection(instance_name: String) -> anyhow::Result<()> {
-    tunnel::stop_tunnel(&instance_name)
+pub fn stop_connection(instance_name: String, remote_port: u16) -> anyhow::Result<()> {
+    tunnel::stop_tunnel(&instance_name, remote_port)
 }
 
-pub fn check_connection_health(instance_name: String) -> anyhow::Result<bool> {
-    tunnel::check_tunnel_health(&instance_name)
+pub fn check_connection_health(instance_name: String, remote_port: u16) -> anyhow::Result<bool> {
+    tunnel::check_tunnel_health(&instance_name, remote_port)
 }
 
 // Remote Desktop
