@@ -214,7 +214,7 @@ class ConnectionsNotifier extends Notifier<Map<String, TunnelState>> {
     }
   }
 
-  Future<void> connect(
+  Future<int?> connect(
     String projectId,
     String zone,
     String instanceName, {
@@ -249,6 +249,7 @@ class ConnectionsNotifier extends Notifier<Map<String, TunnelState>> {
           lastHealthCheck: now, // Initial health check time
         )
       };
+      return port;
     } catch (e) {
       // Error solo en este túnel específico
       state = {
@@ -260,6 +261,7 @@ class ConnectionsNotifier extends Notifier<Map<String, TunnelState>> {
         )
       };
       // No hacemos rethrow para no romper la UI general, el estado refleja el error
+      return null;
     }
   }
 
@@ -342,5 +344,11 @@ class ConnectionsNotifier extends Notifier<Map<String, TunnelState>> {
          tunnelKey: TunnelState(status: 'error', remotePort: rdpPort, error: "Auto-connect failed: $e")
        };
     }
+  }
+
+  /// Refresh instances list after lifecycle operations
+  Future<void> refreshInstances(String projectId) async {
+    // Invalidate the instances provider to force a refresh
+    ref.invalidate(instancesProvider);
   }
 }

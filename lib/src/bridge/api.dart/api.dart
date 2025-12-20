@@ -75,6 +75,9 @@ Future<void> launchSsh({
   instanceName: instanceName,
 );
 
+Future<void> launchSftp({required int port, String? username}) =>
+    RustLib.instance.api.crateApiLaunchSftp(port: port, username: username);
+
 Future<void> initLoggingSystem() =>
     RustLib.instance.api.crateApiInitLoggingSystem();
 
@@ -151,3 +154,33 @@ Future<void> sftpDelete({
 );
 
 Future<String> getUsername() => RustLib.instance.api.crateApiGetUsername();
+
+Future<void> startInstance({
+  required String projectId,
+  required String zone,
+  required String instanceName,
+}) => RustLib.instance.api.crateApiStartInstance(
+  projectId: projectId,
+  zone: zone,
+  instanceName: instanceName,
+);
+
+Future<void> stopInstance({
+  required String projectId,
+  required String zone,
+  required String instanceName,
+}) => RustLib.instance.api.crateApiStopInstance(
+  projectId: projectId,
+  zone: zone,
+  instanceName: instanceName,
+);
+
+Future<void> resetInstance({
+  required String projectId,
+  required String zone,
+  required String instanceName,
+}) => RustLib.instance.api.crateApiResetInstance(
+  projectId: projectId,
+  zone: zone,
+  instanceName: instanceName,
+);

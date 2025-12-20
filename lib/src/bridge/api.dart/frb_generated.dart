@@ -67,7 +67,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.11.1';
 
   @override
-  int get rustContentHash => 1416854370;
+  int get rustContentHash => 427203306;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -107,6 +107,8 @@ abstract class RustLibApi extends BaseApi {
     required RdpSettings settings,
   });
 
+  Future<void> crateApiLaunchSftp({required int port, String? username});
+
   Future<void> crateApiLaunchSsh({
     required String projectId,
     required String zone,
@@ -116,6 +118,12 @@ abstract class RustLibApi extends BaseApi {
   Future<List<GcpInstance>> crateApiListInstances({required String projectId});
 
   Future<List<GcpProject>> crateApiListProjects();
+
+  Future<void> crateApiResetInstance({
+    required String projectId,
+    required String zone,
+    required String instanceName,
+  });
 
   Future<void> crateApiSftpDelete({
     required String host,
@@ -162,9 +170,21 @@ abstract class RustLibApi extends BaseApi {
     required int remotePort,
   });
 
+  Future<void> crateApiStartInstance({
+    required String projectId,
+    required String zone,
+    required String instanceName,
+  });
+
   Future<void> crateApiStopConnection({
     required String instanceName,
     required int remotePort,
+  });
+
+  Future<void> crateApiStopInstance({
+    required String projectId,
+    required String zone,
+    required String instanceName,
   });
 }
 
@@ -491,6 +511,37 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   );
 
   @override
+  Future<void> crateApiLaunchSftp({required int port, String? username}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_u_16(port, serializer);
+          sse_encode_opt_String(username, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 12,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiLaunchSftpConstMeta,
+        argValues: [port, username],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiLaunchSftpConstMeta => const TaskConstMeta(
+    debugName: "launch_sftp",
+    argNames: ["port", "username"],
+  );
+
+  @override
   Future<void> crateApiLaunchSsh({
     required String projectId,
     required String zone,
@@ -506,7 +557,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 12,
+            funcId: 13,
             port: port_,
           );
         },
@@ -536,7 +587,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 13,
+            funcId: 14,
             port: port_,
           );
         },
@@ -563,7 +614,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 14,
+            funcId: 15,
             port: port_,
           );
         },
@@ -580,6 +631,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   TaskConstMeta get kCrateApiListProjectsConstMeta =>
       const TaskConstMeta(debugName: "list_projects", argNames: []);
+
+  @override
+  Future<void> crateApiResetInstance({
+    required String projectId,
+    required String zone,
+    required String instanceName,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(projectId, serializer);
+          sse_encode_String(zone, serializer);
+          sse_encode_String(instanceName, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 16,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiResetInstanceConstMeta,
+        argValues: [projectId, zone, instanceName],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiResetInstanceConstMeta => const TaskConstMeta(
+    debugName: "reset_instance",
+    argNames: ["projectId", "zone", "instanceName"],
+  );
 
   @override
   Future<void> crateApiSftpDelete({
@@ -601,7 +688,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 15,
+            funcId: 17,
             port: port_,
           );
         },
@@ -641,7 +728,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 16,
+            funcId: 18,
             port: port_,
           );
         },
@@ -679,7 +766,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 17,
+            funcId: 19,
             port: port_,
           );
         },
@@ -717,7 +804,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 18,
+            funcId: 20,
             port: port_,
           );
         },
@@ -757,7 +844,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 19,
+            funcId: 21,
             port: port_,
           );
         },
@@ -795,7 +882,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 20,
+            funcId: 22,
             port: port_,
           );
         },
@@ -816,6 +903,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   );
 
   @override
+  Future<void> crateApiStartInstance({
+    required String projectId,
+    required String zone,
+    required String instanceName,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(projectId, serializer);
+          sse_encode_String(zone, serializer);
+          sse_encode_String(instanceName, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 23,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiStartInstanceConstMeta,
+        argValues: [projectId, zone, instanceName],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStartInstanceConstMeta => const TaskConstMeta(
+    debugName: "start_instance",
+    argNames: ["projectId", "zone", "instanceName"],
+  );
+
+  @override
   Future<void> crateApiStopConnection({
     required String instanceName,
     required int remotePort,
@@ -829,7 +952,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 21,
+            funcId: 24,
             port: port_,
           );
         },
@@ -847,6 +970,42 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   TaskConstMeta get kCrateApiStopConnectionConstMeta => const TaskConstMeta(
     debugName: "stop_connection",
     argNames: ["instanceName", "remotePort"],
+  );
+
+  @override
+  Future<void> crateApiStopInstance({
+    required String projectId,
+    required String zone,
+    required String instanceName,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(projectId, serializer);
+          sse_encode_String(zone, serializer);
+          sse_encode_String(instanceName, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 25,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_unit,
+          decodeErrorData: sse_decode_AnyhowException,
+        ),
+        constMeta: kCrateApiStopInstanceConstMeta,
+        argValues: [projectId, zone, instanceName],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiStopInstanceConstMeta => const TaskConstMeta(
+    debugName: "stop_instance",
+    argNames: ["projectId", "zone", "instanceName"],
   );
 
   @protected

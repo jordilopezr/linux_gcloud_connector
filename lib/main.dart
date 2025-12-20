@@ -647,63 +647,46 @@ class InstanceDetailPane extends ConsumerWidget {
               ),
               _ActionButton(
                 icon: Icons.folder_open,
-                label: "Transfer Files",
-                backgroundColor: Colors.orange.shade50,
-                foregroundColor: Colors.orange.shade700,
-                onPressed: (!isRunning) ? null : () async {
-                  // Ensure SSH tunnel (port 22) exists
-                  final tunnelKey = makeTunnelKey(selectedInstance.name, 22);
-                  final sshTunnel = connections[tunnelKey];
-
-                  if (sshTunnel == null || sshTunnel.status != 'connected') {
-                    // Auto-create SSH tunnel
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text("Creating SSH tunnel for file transfer..."))
-                    );
-                    await ref.read(activeConnectionsProvider.notifier).connect(
-                      selectedProject,
-                      selectedInstance.zone,
-                      selectedInstance.name,
-                      remotePort: 22,
-                    );
-
-                    // Wait a moment for tunnel to establish
-                    await Future.delayed(const Duration(seconds: 2));
-
-                    final updatedTunnel = ref.read(activeConnectionsProvider)[tunnelKey];
-                    if (updatedTunnel?.status != 'connected') {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text("Failed to create SSH tunnel"))
-                        );
-                      }
-                      return;
+                label: "Open SFTP",
+                onPressed: (!isRunning || isConnecting) ? null : () async {
+                  try {
+                    // Check for existing SSH tunnel (port 22)
+                    final activeTunnels = getTunnelsForInstance(connections, selectedInstance.name);
+                    int? tunnelPort;
+                    
+                    // Look for a tunnel mapped to remote port 22
+                    for (var t in activeTunnels) {
+                       if (t.value.remotePort == 22 && t.value.status == 'connected') {
+                         tunnelPort = t.value.port;
+                         break;
+                       }
                     }
-                  }
 
-                  // Get tunnel port and username
-                  final tunnel = ref.read(activeConnectionsProvider)[tunnelKey];
-                  if (tunnel != null && tunnel.port != null && context.mounted) {
-                    try {
-                      final username = await getUsername();
+                    if (tunnelPort == null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Opening tunnel for SFTP..."))
+                      );
+                      // Create new tunnel to port 22
+                      final newPort = await ref.read(activeConnectionsProvider.notifier).connect(
+                        selectedProject,
+                        selectedInstance.zone,
+                        selectedInstance.name,
+                        remotePort: 22,
+                      );
+                      if (newPort != null) tunnelPort = newPort;
+                    }
 
-                      if (context.mounted) {
-                        showDialog(
-                          context: context,
-                          builder: (context) => SftpBrowserDialog(
-                            host: 'localhost',
-                            port: tunnel.port!,
-                            username: username,
-                            instanceName: selectedInstance.name,
-                          ),
-                        );
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text("Error: $e"))
-                        );
-                      }
+                    if (tunnelPort != null) {
+                       ScaffoldMessenger.of(context).showSnackBar(
+                         const SnackBar(content: Text("Launching File Manager..."))
+                       );
+                       await launchSftp(port: tunnelPort, username: null); // Let Rust detect username
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("SFTP Error: $e"), backgroundColor: Colors.red),
+                      );
                     }
                   }
                 },
@@ -746,6 +729,133 @@ class InstanceDetailPane extends ConsumerWidget {
                      );
                      ref.read(activeConnectionsProvider.notifier).connect(selectedProject, selectedInstance.zone, selectedInstance.name);
                    }
+                },
+              ),
+              // VM Lifecycle Management buttons
+              _ActionButton(
+                icon: Icons.play_arrow,
+                label: "Start Instance",
+                backgroundColor: Colors.green.shade50,
+                foregroundColor: Colors.green.shade700,
+                onPressed: (isRunning || isConnecting) ? null : () async {
+                  try {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Starting instance... This may take a few minutes."))
+                    );
+                    await startInstance(
+                      projectId: selectedProject,
+                      zone: selectedInstance.zone,
+                      instanceName: selectedInstance.name,
+                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Instance started successfully!"))
+                      );
+                      // Refresh instances list
+                      await ref.read(activeConnectionsProvider.notifier).refreshInstances(selectedProject);
+                    }
+                  } catch (e) {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("Failed to start instance: $e"))
+                      );
+                    }
+                  }
+                },
+              ),
+              _ActionButton(
+                icon: Icons.stop,
+                label: "Stop Instance",
+                backgroundColor: Colors.orange.shade50,
+                foregroundColor: Colors.orange.shade700,
+                onPressed: (!isRunning || isConnecting) ? null : () async {
+                  final confirmed = await _showConfirmationDialog(
+                    context,
+                    title: "Stop Instance",
+                    message: "Are you sure you want to stop ${selectedInstance.name}?\n\nThis will disconnect all active tunnels and shut down the instance.",
+                    confirmText: "Stop",
+                    isDestructive: true,
+                  );
+                  if (confirmed == true) {
+                    try {
+                      // Disconnect all tunnels first
+                      await ref.read(activeConnectionsProvider.notifier).disconnectAllForInstance(selectedInstance.name);
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Stopping instance... This may take a few minutes."))
+                        );
+                      }
+
+                      await stopInstance(
+                        projectId: selectedProject,
+                        zone: selectedInstance.zone,
+                        instanceName: selectedInstance.name,
+                      );
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Instance stopped successfully!"))
+                        );
+                        // Refresh instances list
+                        await ref.read(activeConnectionsProvider.notifier).refreshInstances(selectedProject);
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Failed to stop instance: $e"))
+                        );
+                      }
+                    }
+                  }
+                },
+              ),
+              _ActionButton(
+                icon: Icons.restart_alt,
+                label: "Reset Instance",
+                backgroundColor: Colors.red.shade50,
+                foregroundColor: Colors.red.shade700,
+                onPressed: (!isRunning || isConnecting) ? null : () async {
+                  final confirmed = await _showConfirmationDialog(
+                    context,
+                    title: "Reset Instance",
+                    message: "Are you sure you want to reset ${selectedInstance.name}?\n\nThis will forcefully restart the instance and disconnect all active tunnels.",
+                    confirmText: "Reset",
+                    isDestructive: true,
+                  );
+                  if (confirmed == true) {
+                    try {
+                      // Disconnect all tunnels first
+                      await ref.read(activeConnectionsProvider.notifier).disconnectAllForInstance(selectedInstance.name);
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Resetting instance... This may take a few minutes."))
+                        );
+                      }
+
+                      await resetInstance(
+                        projectId: selectedProject,
+                        zone: selectedInstance.zone,
+                        instanceName: selectedInstance.name,
+                      );
+
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Instance reset successfully!"))
+                        );
+                        // Wait a bit before refreshing to allow GCP to update status
+                        await Future.delayed(const Duration(seconds: 3));
+                        await ref.read(activeConnectionsProvider.notifier).refreshInstances(selectedProject);
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Failed to reset instance: $e"))
+                        );
+                      }
+                    }
+                  }
                 },
               ),
             ],
@@ -1189,6 +1299,47 @@ class InstanceDetailPane extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Future<bool?> _showConfirmationDialog(
+    BuildContext context, {
+    required String title,
+    required String message,
+    required String confirmText,
+    bool isDestructive = false,
+  }) async {
+    return showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                isDestructive ? Icons.warning : Icons.help_outline,
+                color: isDestructive ? Colors.orange : Colors.blue,
+              ),
+              const SizedBox(width: 8),
+              Text(title),
+            ],
+          ),
+          content: Text(message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isDestructive ? Colors.red : Colors.blue,
+                foregroundColor: Colors.white,
+              ),
+              child: Text(confirmText),
+            ),
+          ],
+        );
+      },
     );
   }
 }

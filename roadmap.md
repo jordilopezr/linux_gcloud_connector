@@ -213,26 +213,20 @@ This roadmap outlines planned improvements and features for Linux Cloud Connecto
 
 ---
 
-### 3.4 SFTP File Transfer
+### 3.4 SFTP Integration
 **Status**: ✅ Completed (v1.7.0)
-**Complexity**: Medium
-**Impact**: High
+**Complexity**: Low
+**Impact**: Medium
 
 **Implementation**:
-- ✅ Full-featured graphical SFTP file browser
-- ✅ Upload files from local machine to remote instance
-- ✅ Download files from remote instance to local machine
-- ✅ Create and delete directories remotely
-- ✅ Auto-tunnel creation on SSH port 22
-- ✅ File type icons and size formatting
-- ✅ Error handling with clear messages
+- ✅ "Open SFTP" button in InstanceDetailPane
+- ✅ Auto-create IAP tunnel to port 22 (SSH)
+- ✅ Launch default system file manager with `sftp://[user]@localhost:[port]` URI
+- ✅ Automatic username detection (matches gcloud behavior)
 
-**Files Created/Modified**:
-- ✅ `native/src/sftp.rs` - NEW MODULE (260 lines) with complete SFTP client
-- ✅ `native/Cargo.toml` - Added ssh2 = "0.9.4"
-- ✅ `lib/src/features/sftp_browser.dart` - NEW FILE (540 lines) with full UI
-- ✅ `pubspec.yaml` - Added file_picker, path dependencies
-- ✅ `lib/main.dart` - Integrated "Transfer Files" button
+**Files Modified**:
+- `native/src/gcloud.rs` - Added `launch_sftp_browser` using `xdg-open`
+- `lib/main.dart` - Added SFTP button logic
 
 ---
 

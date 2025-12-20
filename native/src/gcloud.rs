@@ -266,14 +266,208 @@ pub fn launch_ssh(project_id: &str, zone: &str, instance_name: &str) -> anyhow::
     Ok(())
 }
 
+pub fn launch_sftp_browser(port: u16, username: Option<String>) -> anyhow::Result<()> {
+    // Determine username: provided -> env USER -> "user" fallback
+    let user = username.or_else(|| std::env::var("USER").ok()).unwrap_or_else(|| "user".to_string());
+
+    // Construct URI: sftp://user@localhost:port
+    let uri = format!("sftp://{}@localhost:{}", user, port);
+
+    tracing::info!(uri = uri, "Launching SFTP file browser");
+
+    // Use xdg-open to launch default file manager
+    Command::new("xdg-open")
+        .arg(&uri)
+        .spawn()
+        .map_err(|e| anyhow::anyhow!("Failed to launch file manager: {}", e))?;
+
+    Ok(())
+}
+
 pub fn execute_logout() -> Result<()> {
     tracing::info!("Revoking all gcloud credentials");
 
     // --quiet evita prompts, --all borra todas las cuentas activas
     let _ = Command::new("gcloud")
-        .args(&["auth", "revoke", "--all", "--quiet"]) 
+        .args(&["auth", "revoke", "--all", "--quiet"])
         .status(); // Ignoramos el resultado, si falla es probable que ya no haya credenciales.
 
     Ok(())
+}
+
+// VM Lifecycle Management Functions
+
+/// Start a stopped instance
+async fn start_instance_async(project_id: &str, zone: &str, instance_name: &str) -> Result<()> {
+    // SECURITY: Validate all inputs
+    validate_project_id(project_id)?;
+    validate_zone(zone)?;
+    validate_instance_name(instance_name)?;
+
+    tracing::info!(
+        project_id = project_id,
+        zone = zone,
+        instance_name = instance_name,
+        "Starting instance"
+    );
+
+    let output = tokio::time::timeout(
+        std::time::Duration::from_secs(120), // 2 minutes timeout for start
+        tokio::process::Command::new("gcloud")
+            .args(&[
+                "compute",
+                "instances",
+                "start",
+                instance_name,
+                "--zone",
+                zone,
+                "--project",
+                project_id,
+                "--quiet",
+            ])
+            .output()
+    )
+    .await
+    .map_err(|_| anyhow!("Timeout starting instance after 120 seconds"))?
+    .map_err(|e| anyhow!("Failed to execute gcloud start command: {}", e))?;
+
+    if output.status.success() {
+        tracing::info!(
+            instance_name = instance_name,
+            "Instance started successfully"
+        );
+        Ok(())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        tracing::error!(
+            instance_name = instance_name,
+            stderr = %stderr,
+            "Failed to start instance"
+        );
+        Err(anyhow!("Failed to start instance: {}", stderr))
+    }
+}
+
+/// Synchronous wrapper for start_instance
+pub fn start_instance(project_id: &str, zone: &str, instance_name: &str) -> Result<()> {
+    let rt = tokio::runtime::Runtime::new()
+        .map_err(|e| anyhow!("Failed to create tokio runtime: {}", e))?;
+    rt.block_on(start_instance_async(project_id, zone, instance_name))
+}
+
+/// Stop a running instance
+async fn stop_instance_async(project_id: &str, zone: &str, instance_name: &str) -> Result<()> {
+    // SECURITY: Validate all inputs
+    validate_project_id(project_id)?;
+    validate_zone(zone)?;
+    validate_instance_name(instance_name)?;
+
+    tracing::info!(
+        project_id = project_id,
+        zone = zone,
+        instance_name = instance_name,
+        "Stopping instance"
+    );
+
+    let output = tokio::time::timeout(
+        std::time::Duration::from_secs(120), // 2 minutes timeout for stop
+        tokio::process::Command::new("gcloud")
+            .args(&[
+                "compute",
+                "instances",
+                "stop",
+                instance_name,
+                "--zone",
+                zone,
+                "--project",
+                project_id,
+                "--quiet",
+            ])
+            .output()
+    )
+    .await
+    .map_err(|_| anyhow!("Timeout stopping instance after 120 seconds"))?
+    .map_err(|e| anyhow!("Failed to execute gcloud stop command: {}", e))?;
+
+    if output.status.success() {
+        tracing::info!(
+            instance_name = instance_name,
+            "Instance stopped successfully"
+        );
+        Ok(())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        tracing::error!(
+            instance_name = instance_name,
+            stderr = %stderr,
+            "Failed to stop instance"
+        );
+        Err(anyhow!("Failed to stop instance: {}", stderr))
+    }
+}
+
+/// Synchronous wrapper for stop_instance
+pub fn stop_instance(project_id: &str, zone: &str, instance_name: &str) -> Result<()> {
+    let rt = tokio::runtime::Runtime::new()
+        .map_err(|e| anyhow!("Failed to create tokio runtime: {}", e))?;
+    rt.block_on(stop_instance_async(project_id, zone, instance_name))
+}
+
+/// Reset (restart) a running instance
+async fn reset_instance_async(project_id: &str, zone: &str, instance_name: &str) -> Result<()> {
+    // SECURITY: Validate all inputs
+    validate_project_id(project_id)?;
+    validate_zone(zone)?;
+    validate_instance_name(instance_name)?;
+
+    tracing::info!(
+        project_id = project_id,
+        zone = zone,
+        instance_name = instance_name,
+        "Resetting instance"
+    );
+
+    let output = tokio::time::timeout(
+        std::time::Duration::from_secs(120), // 2 minutes timeout for reset
+        tokio::process::Command::new("gcloud")
+            .args(&[
+                "compute",
+                "instances",
+                "reset",
+                instance_name,
+                "--zone",
+                zone,
+                "--project",
+                project_id,
+                "--quiet",
+            ])
+            .output()
+    )
+    .await
+    .map_err(|_| anyhow!("Timeout resetting instance after 120 seconds"))?
+    .map_err(|e| anyhow!("Failed to execute gcloud reset command: {}", e))?;
+
+    if output.status.success() {
+        tracing::info!(
+            instance_name = instance_name,
+            "Instance reset successfully"
+        );
+        Ok(())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        tracing::error!(
+            instance_name = instance_name,
+            stderr = %stderr,
+            "Failed to reset instance"
+        );
+        Err(anyhow!("Failed to reset instance: {}", stderr))
+    }
+}
+
+/// Synchronous wrapper for reset_instance
+pub fn reset_instance(project_id: &str, zone: &str, instance_name: &str) -> Result<()> {
+    let rt = tokio::runtime::Runtime::new()
+        .map_err(|e| anyhow!("Failed to create tokio runtime: {}", e))?;
+    rt.block_on(reset_instance_async(project_id, zone, instance_name))
 }
 

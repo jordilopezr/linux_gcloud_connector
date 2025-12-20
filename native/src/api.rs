@@ -61,6 +61,11 @@ pub fn launch_ssh(project_id: String, zone: String, instance_name: String) -> an
     gcloud::launch_ssh(&project_id, &zone, &instance_name)
 }
 
+// SFTP
+pub fn launch_sftp(port: u16, username: Option<String>) -> anyhow::Result<()> {
+    gcloud::launch_sftp_browser(port, username)
+}
+
 // Logging
 pub fn init_logging_system() -> anyhow::Result<()> {
     logging::init_logging()
@@ -127,4 +132,17 @@ pub fn sftp_delete(
 
 pub fn get_username() -> anyhow::Result<String> {
     sftp::get_current_username()
+}
+
+// VM Lifecycle Management
+pub fn start_instance(project_id: String, zone: String, instance_name: String) -> anyhow::Result<()> {
+    gcloud::start_instance(&project_id, &zone, &instance_name)
+}
+
+pub fn stop_instance(project_id: String, zone: String, instance_name: String) -> anyhow::Result<()> {
+    gcloud::stop_instance(&project_id, &zone, &instance_name)
+}
+
+pub fn reset_instance(project_id: String, zone: String, instance_name: String) -> anyhow::Result<()> {
+    gcloud::reset_instance(&project_id, &zone, &instance_name)
 }
