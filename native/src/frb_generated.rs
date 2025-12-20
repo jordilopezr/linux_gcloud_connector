@@ -608,11 +608,17 @@ impl SseDecode for crate::gcloud::GcpInstance {
         let mut var_status = <String>::sse_decode(deserializer);
         let mut var_zone = <String>::sse_decode(deserializer);
         let mut var_machineType = <String>::sse_decode(deserializer);
+        let mut var_cpuCount = <Option<u32>>::sse_decode(deserializer);
+        let mut var_memoryMb = <Option<u32>>::sse_decode(deserializer);
+        let mut var_diskGb = <Option<u32>>::sse_decode(deserializer);
         return crate::gcloud::GcpInstance {
             name: var_name,
             status: var_status,
             zone: var_zone,
             machine_type: var_machineType,
+            cpu_count: var_cpuCount,
+            memory_mb: var_memoryMb,
+            disk_gb: var_diskGb,
         };
     }
 }
@@ -790,6 +796,9 @@ impl flutter_rust_bridge::IntoDart for crate::gcloud::GcpInstance {
             self.status.into_into_dart().into_dart(),
             self.zone.into_into_dart().into_dart(),
             self.machine_type.into_into_dart().into_dart(),
+            self.cpu_count.into_into_dart().into_dart(),
+            self.memory_mb.into_into_dart().into_dart(),
+            self.disk_gb.into_into_dart().into_dart(),
         ]
         .into_dart()
     }
@@ -867,6 +876,9 @@ impl SseEncode for crate::gcloud::GcpInstance {
         <String>::sse_encode(self.status, serializer);
         <String>::sse_encode(self.zone, serializer);
         <String>::sse_encode(self.machine_type, serializer);
+        <Option<u32>>::sse_encode(self.cpu_count, serializer);
+        <Option<u32>>::sse_encode(self.memory_mb, serializer);
+        <Option<u32>>::sse_encode(self.disk_gb, serializer);
     }
 }
 

@@ -525,6 +525,70 @@ class InstanceDetailPane extends ConsumerWidget {
               ),
             ],
           ),
+          const SizedBox(height: 24),
+
+          // Instance Resources Card
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.blue.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.memory, size: 18, color: Colors.blue.shade700),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Instance Resources",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue.shade900,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ResourceChip(
+                        icon: Icons.developer_board,
+                        label: "CPU",
+                        value: selectedInstance.cpuCount != null
+                            ? "${selectedInstance.cpuCount} vCPUs"
+                            : "N/A",
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _ResourceChip(
+                        icon: Icons.memory,
+                        label: "RAM",
+                        value: selectedInstance.memoryMb != null
+                            ? "${(selectedInstance.memoryMb! / 1024).toStringAsFixed(1)} GB"
+                            : "N/A",
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _ResourceChip(
+                        icon: Icons.storage,
+                        label: "Disk",
+                        value: selectedInstance.diskGb != null
+                            ? "${selectedInstance.diskGb} GB"
+                            : "N/A",
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 32),
 
           // Show all active tunnels for this instance
@@ -1112,6 +1176,58 @@ class _MetricCard extends StatelessWidget {
               fontSize: 16,
               fontWeight: FontWeight.bold,
               color: color.withValues(alpha: 0.9),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ResourceChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _ResourceChip({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: Colors.grey.shade600),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey.shade600,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'monospace',
             ),
           ),
         ],

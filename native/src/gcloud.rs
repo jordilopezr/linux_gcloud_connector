@@ -19,6 +19,16 @@ pub struct GcpInstance {
     pub status: String,
     pub zone: String,
     pub machine_type: String,
+    pub cpu_count: Option<u32>,
+    pub memory_mb: Option<u32>,
+    pub disk_gb: Option<u32>,
+}
+
+#[derive(Deserialize)]
+struct RawDisk {
+    #[serde(rename = "diskSizeGb")]
+    disk_size_gb: Option<String>,
+    boot: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -27,7 +37,8 @@ struct RawInstance {
     status: String,
     zone: String,
     #[serde(rename = "machineType")]
-    machine_type: Option<String>, // Option because stopped instances might behave differently, or for safety
+    machine_type: Option<String>,
+    disks: Option<Vec<RawDisk>>,
 }
 
 pub fn is_gcloud_installed() -> bool {
@@ -83,6 +94,50 @@ pub fn get_projects() -> Result<Vec<GcpProject>> {
     rt.block_on(get_projects_async())
 }
 
+/// Extract CPU and memory specs from machine type name
+/// Returns (cpu_count, memory_mb) if the machine type is recognized
+fn get_machine_specs(machine_type: &str) -> Option<(u32, u32)> {
+    match machine_type {
+        // E2 series (cost-optimized)
+        "e2-micro" => Some((2, 1024)),
+        "e2-small" => Some((2, 2048)),
+        "e2-medium" => Some((2, 4096)),
+        "e2-standard-2" => Some((2, 8192)),
+        "e2-standard-4" => Some((4, 16384)),
+        "e2-standard-8" => Some((8, 32768)),
+        "e2-standard-16" => Some((16, 65536)),
+        "e2-standard-32" => Some((32, 131072)),
+
+        // N1 series (balanced)
+        "n1-standard-1" => Some((1, 3840)),
+        "n1-standard-2" => Some((2, 7680)),
+        "n1-standard-4" => Some((4, 15360)),
+        "n1-standard-8" => Some((8, 30720)),
+        "n1-standard-16" => Some((16, 61440)),
+        "n1-standard-32" => Some((32, 122880)),
+
+        // N2 series (balanced, newer)
+        "n2-standard-2" => Some((2, 8192)),
+        "n2-standard-4" => Some((4, 16384)),
+        "n2-standard-8" => Some((8, 32768)),
+        "n2-standard-16" => Some((16, 65536)),
+        "n2-standard-32" => Some((32, 131072)),
+
+        // N2D series (AMD)
+        "n2d-standard-2" => Some((2, 8192)),
+        "n2d-standard-4" => Some((4, 16384)),
+        "n2d-standard-8" => Some((8, 32768)),
+
+        // C2 series (compute-optimized)
+        "c2-standard-4" => Some((4, 16384)),
+        "c2-standard-8" => Some((8, 32768)),
+        "c2-standard-16" => Some((16, 65536)),
+
+        // Add more as needed
+        _ => None,
+    }
+}
+
 /// Async version with timeout
 async fn get_instances_async(project_id: &str) -> Result<Vec<GcpInstance>> {
     // Validate project ID before passing to shell command
@@ -120,11 +175,30 @@ async fn get_instances_async(project_id: &str) -> Result<Vec<GcpInstance>> {
             .unwrap_or("Unknown")
             .to_string();
 
+        // Extract CPU and memory from machine type
+        let (cpu_count, memory_mb) = get_machine_specs(&machine_type)
+            .map(|(cpu, mem)| (Some(cpu), Some(mem)))
+            .unwrap_or((None, None));
+
+        // Extract disk size from boot disk (first disk marked as boot=true)
+        let disk_gb = raw.disks
+            .as_ref()
+            .and_then(|disks| {
+                disks.iter()
+                    .find(|d| d.boot.unwrap_or(false))
+                    .or_else(|| disks.first())
+            })
+            .and_then(|disk| disk.disk_size_gb.as_ref())
+            .and_then(|size_str| size_str.parse::<u32>().ok());
+
         GcpInstance {
             name: raw.name,
             status: raw.status,
             zone: zone_name,
             machine_type,
+            cpu_count,
+            memory_mb,
+            disk_gb,
         }
     }).collect();
 

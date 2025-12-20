@@ -173,19 +173,26 @@ This roadmap outlines planned improvements and features for Linux Cloud Connecto
 ---
 
 ### 3.2 Instance Metrics
-**Status**: ✅ Partially Completed (v1.6.0)
+**Status**: ✅ Completed (v1.6.0)
 **Complexity**: Medium
 **Impact**: Medium
 
 **Implementation**:
 - ✅ Fetch Machine Type (Capacity) via `gcloud compute instances list` JSON
 - ✅ Display Machine Type (e.g., e2-medium) in Instance List and Detail Pane
-- [ ] Fetch live CPU/RAM usage (Requires Cloud Monitoring API + Ops Agent) - **On Hold** (High complexity/dependencies)
-- [ ] Auto-refresh every 30 seconds
+- ✅ Extract CPU, RAM, and Disk specifications for all instances
+- ✅ Machine type intelligence mapping (E2, N1, N2, N2D, C2 series)
+- ✅ Visual resource dashboard with dedicated metric chips
+- ✅ Automatic MB to GB conversion for better readability
+- [ ] Fetch live CPU/RAM usage (Requires Cloud Monitoring API + Ops Agent) - **Deferred to v2.0.0** (High complexity/dependencies)
+- [ ] Auto-refresh metrics every 30 seconds - **Deferred to v2.0.0**
 
 **Files Modified**:
-- `native/src/gcloud.rs` - Added `machine_type` extraction
-- `lib/main.dart` - Added Machine Type UI elements
+- ✅ `native/src/gcloud.rs` - Added `cpu_count`, `memory_mb`, `disk_gb` fields, `get_machine_specs()` function
+- ✅ `lib/src/bridge/api.dart/gcloud.dart` - Extended GcpInstance class
+- ✅ `native/src/frb_generated.rs` - Updated FFI bridge encoding/decoding
+- ✅ `lib/src/bridge/api.dart/frb_generated.dart` - Updated FFI bridge serialization
+- ✅ `lib/main.dart` - Added resource metrics card and _ResourceChip widget
 
 ---
 
@@ -278,9 +285,9 @@ This roadmap outlines planned improvements and features for Linux Cloud Connecto
 |---------|----------|--------|----------|
 | **v1.3.0** | P1 | ✅ Released (2025-12-18) | Stability improvements (health checks, timeouts, validation, secure permissions) |
 | **v1.4.0** | P2 | ✅ Released (2025-12-18) | Observability (structured logging, tunnel dashboard, metrics, export logs) |
-| **v1.5.0** | P3 | ✅ Released (2025-12-18) | Generic port forwarding, multi-tunnel support, custom tunnel dialog with 8 service presets |
-| **v1.6.0** | P3 | Planned | Tunnel persistence, instance metrics, auto-reconnect |
-| **v2.0.0** | P3+P4 | Planned | Testing suite, SFTP integration, dependency cleanup |
+| **v1.5.0** | P3 | ✅ Released (2025-12-19) | Generic port forwarding, multi-tunnel support, custom tunnel dialog with 8 service presets |
+| **v1.6.0** | P3 | ✅ Released (2025-12-19) | Instance resource metrics (CPU, RAM, Disk), machine type intelligence, visual dashboard |
+| **v2.0.0** | P3+P4 | Planned | Tunnel persistence, auto-reconnect, testing suite, SFTP integration, dependency cleanup, live metrics |
 
 ---
 

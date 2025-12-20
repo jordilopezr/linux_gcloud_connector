@@ -619,13 +619,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   GcpInstance dco_decode_gcp_instance(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     final arr = raw as List<dynamic>;
-    if (arr.length != 4)
-      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    if (arr.length != 7)
+      throw Exception('unexpected arr length: expect 7 but see ${arr.length}');
     return GcpInstance(
       name: dco_decode_String(arr[0]),
       status: dco_decode_String(arr[1]),
       zone: dco_decode_String(arr[2]),
       machineType: dco_decode_String(arr[3]),
+      cpuCount: dco_decode_opt_box_autoadd_u_32(arr[4]),
+      memoryMb: dco_decode_opt_box_autoadd_u_32(arr[5]),
+      diskGb: dco_decode_opt_box_autoadd_u_32(arr[6]),
     );
   }
 
@@ -752,11 +755,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var var_status = sse_decode_String(deserializer);
     var var_zone = sse_decode_String(deserializer);
     var var_machineType = sse_decode_String(deserializer);
+    var var_cpuCount = sse_decode_opt_box_autoadd_u_32(deserializer);
+    var var_memoryMb = sse_decode_opt_box_autoadd_u_32(deserializer);
+    var var_diskGb = sse_decode_opt_box_autoadd_u_32(deserializer);
     return GcpInstance(
       name: var_name,
       status: var_status,
       zone: var_zone,
       machineType: var_machineType,
+      cpuCount: var_cpuCount,
+      memoryMb: var_memoryMb,
+      diskGb: var_diskGb,
     );
   }
 
@@ -912,6 +921,9 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_String(self.status, serializer);
     sse_encode_String(self.zone, serializer);
     sse_encode_String(self.machineType, serializer);
+    sse_encode_opt_box_autoadd_u_32(self.cpuCount, serializer);
+    sse_encode_opt_box_autoadd_u_32(self.memoryMb, serializer);
+    sse_encode_opt_box_autoadd_u_32(self.diskGb, serializer);
   }
 
   @protected

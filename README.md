@@ -4,15 +4,24 @@
 
 Desarrollada por **Jordi Lopez Reyes** con **Flutter** y **Rust** para un rendimiento y seguridad óptimos.
 
-![Status](https://img.shields.io/badge/Status-Stable%20v1.5.0-brightgreen)
+![Status](https://img.shields.io/badge/Status-Stable%20v1.6.0-brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-Linux-blue)
 ![License](https://img.shields.io/badge/License-MIT-purple)
 ![Security](https://img.shields.io/badge/Security-Hardened-success)
 ![Multi-Tunnel](https://img.shields.io/badge/Multi--Tunnel-Enabled-blue)
+![Metrics](https://img.shields.io/badge/Instance%20Metrics-Enabled-orange)
 
 <img width="1024" height="768" alt="image" src="https://github.com/user-attachments/assets/b510f43b-2a42-462b-9a4e-bfe8618068a5" />
 
 ## ✨ Características Clave
+
+### 📊 Instance Resource Metrics (v1.6.0) - NUEVO
+*   **💾 Información de Recursos:** Visualiza CPU, RAM y Disco de cada instancia en tiempo real
+*   **🎯 Machine Type Intelligence:** Mapeo automático de tipos de máquina a especificaciones (e2-micro, n1-standard, n2, c2, etc.)
+*   **📈 Dashboard Visual:** Tarjeta dedicada con chips individuales para cada métrica
+*   **🔍 Detección de Disco:** Extracción automática del tamaño del disco boot desde la API de gcloud
+*   **📐 Conversión Automática:** Muestra RAM en GB con conversión automática desde MB
+*   **✨ Soporte Completo:** Compatible con series E2, N1, N2, N2D, C2 y más
 
 ### 🚀 Generic Port Forwarding & Multi-Tunnel (v1.5.0)
 *   **🔌 Soporte Universal:** Conecta a CUALQUIER servicio TCP vía IAP (PostgreSQL, MySQL, HTTP, Redis, MongoDB, etc.)
