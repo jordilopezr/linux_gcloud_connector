@@ -31,9 +31,9 @@ class GcpInstance {
       status.hashCode ^
       zone.hashCode ^
       machineType.hashCode ^
-      (cpuCount?.hashCode ?? 0) ^
-      (memoryMb?.hashCode ?? 0) ^
-      (diskGb?.hashCode ?? 0);
+      cpuCount.hashCode ^
+      memoryMb.hashCode ^
+      diskGb.hashCode;
 
   @override
   bool operator ==(Object other) =>

@@ -2,11 +2,13 @@ use crate::gcloud;
 use crate::tunnel;
 use crate::remmina;
 use crate::logging;
+use crate::sftp;
 
 // Re-export structs for FRB
 pub use crate::gcloud::GcpProject;
 pub use crate::gcloud::GcpInstance;
-pub use crate::remmina::RdpSettings; // Export Settings
+pub use crate::remmina::RdpSettings;
+pub use crate::sftp::RemoteFileEntry;
 
 pub fn greet() -> String {
     "Hello from Rust! Gcloud integration ready.".to_string()
@@ -72,4 +74,57 @@ pub fn export_logs_to_file() -> anyhow::Result<String> {
 pub fn get_log_file_path() -> anyhow::Result<String> {
     let path = logging::get_current_log_path()?;
     Ok(path.to_string_lossy().to_string())
+}
+
+// SFTP File Transfer
+pub fn sftp_list_dir(
+    host: String,
+    port: u16,
+    username: String,
+    remote_path: String,
+) -> anyhow::Result<Vec<RemoteFileEntry>> {
+    sftp::sftp_list_directory(host, port, username, remote_path)
+}
+
+pub fn sftp_download(
+    host: String,
+    port: u16,
+    username: String,
+    remote_path: String,
+    local_path: String,
+) -> anyhow::Result<u64> {
+    sftp::sftp_download_file(host, port, username, remote_path, local_path)
+}
+
+pub fn sftp_upload(
+    host: String,
+    port: u16,
+    username: String,
+    local_path: String,
+    remote_path: String,
+) -> anyhow::Result<u64> {
+    sftp::sftp_upload_file(host, port, username, local_path, remote_path)
+}
+
+pub fn sftp_mkdir(
+    host: String,
+    port: u16,
+    username: String,
+    remote_path: String,
+) -> anyhow::Result<()> {
+    sftp::sftp_create_directory(host, port, username, remote_path)
+}
+
+pub fn sftp_delete(
+    host: String,
+    port: u16,
+    username: String,
+    remote_path: String,
+    is_directory: bool,
+) -> anyhow::Result<()> {
+    sftp::sftp_delete(host, port, username, remote_path, is_directory)
+}
+
+pub fn get_username() -> anyhow::Result<String> {
+    sftp::get_current_username()
 }

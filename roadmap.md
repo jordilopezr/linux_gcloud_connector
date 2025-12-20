@@ -213,18 +213,44 @@ This roadmap outlines planned improvements and features for Linux Cloud Connecto
 
 ---
 
-### 3.4 SFTP Integration
-**Status**: Planned
-**Complexity**: Low
-**Impact**: Low
+### 3.4 SFTP File Transfer
+**Status**: ✅ Completed (v1.7.0)
+**Complexity**: Medium
+**Impact**: High
 
 **Implementation**:
-- [ ] "Open SFTP" button in InstanceDetailPane
-- [ ] Launch file manager with `sftp://localhost:PORT` if tunnel active
-- [ ] Support for Nautilus, Dolphin, Thunar
+- ✅ Full-featured graphical SFTP file browser
+- ✅ Upload files from local machine to remote instance
+- ✅ Download files from remote instance to local machine
+- ✅ Create and delete directories remotely
+- ✅ Auto-tunnel creation on SSH port 22
+- ✅ File type icons and size formatting
+- ✅ Error handling with clear messages
 
-**Files to Modify**:
-- `native/src/gcloud.rs` - Add `launch_sftp()`
+**Files Created/Modified**:
+- ✅ `native/src/sftp.rs` - NEW MODULE (260 lines) with complete SFTP client
+- ✅ `native/Cargo.toml` - Added ssh2 = "0.9.4"
+- ✅ `lib/src/features/sftp_browser.dart` - NEW FILE (540 lines) with full UI
+- ✅ `pubspec.yaml` - Added file_picker, path dependencies
+- ✅ `lib/main.dart` - Integrated "Transfer Files" button
+
+---
+
+### 3.5 VM Lifecycle Management
+**Status**: Planned (v1.8.0)
+**Complexity**: Medium
+**Impact**: High
+
+**Implementation**:
+- [ ] Start/stop/restart instances from UI
+- [ ] Instance status monitoring and auto-refresh
+- [ ] Confirmation dialogs for destructive actions
+- [ ] Error handling for lifecycle operations
+- [ ] Visual feedback during state transitions
+
+**Files to Create/Modify**:
+- `native/src/gcloud.rs` - Add `start_instance()`, `stop_instance()`, `reset_instance()`
+- `lib/main.dart` - Add action buttons to InstanceDetailPane
 
 ---
 
@@ -287,7 +313,9 @@ This roadmap outlines planned improvements and features for Linux Cloud Connecto
 | **v1.4.0** | P2 | ✅ Released (2025-12-18) | Observability (structured logging, tunnel dashboard, metrics, export logs) |
 | **v1.5.0** | P3 | ✅ Released (2025-12-19) | Generic port forwarding, multi-tunnel support, custom tunnel dialog with 8 service presets |
 | **v1.6.0** | P3 | ✅ Released (2025-12-19) | Instance resource metrics (CPU, RAM, Disk), machine type intelligence, visual dashboard |
-| **v2.0.0** | P3+P4 | Planned | Tunnel persistence, auto-reconnect, testing suite, SFTP integration, dependency cleanup, live metrics |
+| **v1.7.0** | P3 | ✅ Released (2025-12-20) | SFTP file transfer browser with upload/download/delete capabilities over secure SSH tunnels |
+| **v1.8.0** | P3 | Planned | VM Lifecycle Management (start/stop/restart instances from UI) |
+| **v2.0.0** | P3+P4 | Planned | Tunnel persistence, auto-reconnect, testing suite, dependency cleanup, live metrics, multi-session tabs |
 
 ---
 
@@ -310,5 +338,5 @@ This roadmap outlines planned improvements and features for Linux Cloud Connecto
 
 ---
 
-**Last Updated**: 2025-12-18
+**Last Updated**: 2025-12-20
 **Author**: Jordi Lopez Reyes (with architectural analysis by Claude)

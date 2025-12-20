@@ -7,6 +7,7 @@ import 'frb_generated.dart';
 import 'gcloud.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'remmina.dart';
+import 'sftp.dart';
 
 Future<String> greet() => RustLib.instance.api.crateApiGreet();
 
@@ -82,3 +83,71 @@ Future<String> exportLogsToFile() =>
 
 Future<String> getLogFilePath() =>
     RustLib.instance.api.crateApiGetLogFilePath();
+
+Future<List<RemoteFileEntry>> sftpListDir({
+  required String host,
+  required int port,
+  required String username,
+  required String remotePath,
+}) => RustLib.instance.api.crateApiSftpListDir(
+  host: host,
+  port: port,
+  username: username,
+  remotePath: remotePath,
+);
+
+Future<BigInt> sftpDownload({
+  required String host,
+  required int port,
+  required String username,
+  required String remotePath,
+  required String localPath,
+}) => RustLib.instance.api.crateApiSftpDownload(
+  host: host,
+  port: port,
+  username: username,
+  remotePath: remotePath,
+  localPath: localPath,
+);
+
+Future<BigInt> sftpUpload({
+  required String host,
+  required int port,
+  required String username,
+  required String localPath,
+  required String remotePath,
+}) => RustLib.instance.api.crateApiSftpUpload(
+  host: host,
+  port: port,
+  username: username,
+  localPath: localPath,
+  remotePath: remotePath,
+);
+
+Future<void> sftpMkdir({
+  required String host,
+  required int port,
+  required String username,
+  required String remotePath,
+}) => RustLib.instance.api.crateApiSftpMkdir(
+  host: host,
+  port: port,
+  username: username,
+  remotePath: remotePath,
+);
+
+Future<void> sftpDelete({
+  required String host,
+  required int port,
+  required String username,
+  required String remotePath,
+  required bool isDirectory,
+}) => RustLib.instance.api.crateApiSftpDelete(
+  host: host,
+  port: port,
+  username: username,
+  remotePath: remotePath,
+  isDirectory: isDirectory,
+);
+
+Future<String> getUsername() => RustLib.instance.api.crateApiGetUsername();

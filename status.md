@@ -1,8 +1,8 @@
 # Linux Cloud Connector - Project Status
 
-## Current Version: v1.6.0 (Stable)
+## Current Version: v1.7.0 (Stable)
 
-**Status**: ✅ Production Ready - Full instance metrics and resource monitoring
+**Status**: ✅ Production Ready - Full SFTP file transfer capabilities
 
 ---
 
@@ -28,6 +28,7 @@
 | **Observability** | ✅ Working | Excellent | Comprehensive monitoring and debugging capabilities |
 | **Instance Resource Metrics** | ✅ Working | Excellent | Displays CPU, RAM, and Disk for all instances with machine type intelligence |
 | **Generic Port Forwarding** | ✅ Working | Excellent | Universal TCP port forwarding with unlimited simultaneous tunnels |
+| **SFTP File Transfer** | ✅ Working | Excellent | Full-featured file browser with upload/download/delete over secure SSH tunnels |
 
 ### ⚠️ Partially Implemented / Known Issues
 
@@ -40,19 +41,19 @@
 | Feature | Planned Version | Notes |
 |---------|----------------|-------|
 | **Connection Persistence** | v2.0.0 | Restore tunnels on app restart |
-| **SFTP Integration** | v2.0.0 | File transfer via SSH tunnel |
 | **Automated Testing** | v2.0.0 | Currently only placeholder tests |
 | **Real-time CPU/RAM Usage** | v2.0.0 | Live monitoring metrics via GCP Monitoring API |
+| **VM Lifecycle Management** | v2.0.0 | Start/stop/restart instances from UI |
 
 ---
 
 ## 🔍 Code Quality Metrics
 
 ### Lines of Code
-- **Flutter/Dart**: ~1,736 lines (UI + state management + resource metrics)
-- **Rust**: ~2,239 lines (includes validation, health checks, timeouts, machine type specs)
-- **Generated FFI Bridge**: ~2,060 lines (auto-generated)
-- **Total**: ~6,035 lines
+- **Flutter/Dart**: ~2,350 lines (UI + state management + resource metrics + SFTP browser)
+- **Rust**: ~2,520 lines (validation, health checks, timeouts, machine type specs, SFTP client)
+- **Generated FFI Bridge**: ~2,300 lines (auto-generated, includes SFTP types)
+- **Total**: ~7,170 lines
 
 ### Test Coverage
 - **Rust**: 0% (no unit tests)
@@ -112,10 +113,23 @@
 
 ## 🚀 Active Development
 
-### ✅ Completed: v1.6.0 - Instance Resource Metrics
-**Start Date**: 2025-12-19
-**Release Date**: 2025-12-19 (Same day!)
+### ✅ Completed: v1.7.0 - SFTP File Transfer
+**Start Date**: 2025-12-20
+**Release Date**: 2025-12-20 (Same day!)
 
+**Completed Goals**:
+- ✅ Full-featured SFTP file browser UI with navigation
+- ✅ Upload files from local machine to remote instance
+- ✅ Download files from remote instance to local machine
+- ✅ Create and delete directories remotely
+- ✅ Delete files remotely with confirmation dialog
+- ✅ Auto-tunnel creation on SSH port 22
+- ✅ File type detection with appropriate icons
+- ✅ File size formatting (B, KB, MB, GB)
+- ✅ Rust SFTP client implementation with ssh2 crate
+- ✅ FFI bridge regeneration with SFTP functions
+
+### Previous Sprint: v1.6.0 - Instance Resource Metrics
 **Completed Goals**:
 - ✅ Instance resource display (CPU, RAM, Disk)
 - ✅ Machine type intelligence mapping (E2, N1, N2, N2D, C2 series)
@@ -138,12 +152,20 @@
 - ✅ Tunnel metrics dashboard
 - ✅ Real-time health monitoring
 
-### Next Sprint: v2.0.0 - Advanced Features
+### Next Sprint: v1.8.0 - VM Lifecycle Management
+**Planned Features**:
+- Start/stop/restart instances from UI
+- Instance status monitoring and auto-refresh
+- Confirmation dialogs for destructive actions
+- Error handling for lifecycle operations
+- Visual feedback during state transitions
+
+### Future: v2.0.0 - Advanced Features
 **Planned Features**:
 - Connection persistence (restore tunnels on restart)
-- SFTP integration
 - Automated testing infrastructure
 - Real-time CPU/RAM usage monitoring via GCP Monitoring API
+- Multi-session tabs for simultaneous connections
 
 **See**: [roadmap.md](roadmap.md) for detailed implementation plan
 
@@ -172,7 +194,7 @@
 - `flutter_rust_bridge` 2.11.1 - FFI code generation
 - `anyhow` 1.0.100 - Error handling
 - `serde` + `serde_json` - JSON parsing
-- `tokio` 1.48.0 - Async runtime with timeouts (rt, time, process, io-util features enabled)
+- `tokio` 1.48.0 - Async runtime with timeouts (rt, time, process, io-util, fs features enabled)
 - `regex` 1.11.1 - Input validation
 - `tracing` 0.1.41 - Structured logging framework
 - `tracing-subscriber` 0.3.19 - Log formatting and filtering (env-filter, fmt, json)
@@ -180,12 +202,15 @@
 - `chrono` 0.4.38 - Timestamp handling for log exports
 - `lazy_static` 1.5.0 - Global tunnel state
 - `dirs` 6.0.0 - Standard paths
+- `ssh2` 0.9.4 - SFTP client library for secure file transfers
 
 ### Flutter (pubspec.yaml)
 - `flutter_riverpod` 3.0.3 - State management
 - `flutter_rust_bridge` 2.11.1 - FFI bindings
 - `flutter_secure_storage` 10.0.0 - Encrypted storage
 - `shared_preferences` 2.5.4 - Preferences
+- `file_picker` 8.1.6 - File and directory selection for SFTP operations
+- `path` 1.9.0 - Path manipulation for SFTP file operations
 - `freezed_annotation` - **UNUSED**
 - `json_annotation` - **UNUSED**
 
@@ -203,6 +228,20 @@
 ---
 
 ## 📝 Recent Changes
+
+### v1.7.0 (2025-12-20) - SFTP File Transfer Release
+- ✅ **SFTP File Browser**: Full-featured graphical file browser for remote instances
+- ✅ **File Upload**: Transfer files from local machine to remote instance via SFTP
+- ✅ **File Download**: Download files from remote instance to local machine
+- ✅ **Directory Operations**: Create new directories and delete files/folders remotely
+- ✅ **Auto-Tunnel**: Automatic SSH tunnel creation on port 22 when opening file browser
+- ✅ **File Type Icons**: Visual file type identification (documents, images, code, archives, etc.)
+- ✅ **Size Formatting**: Human-readable file sizes (B, KB, MB, GB)
+- ✅ **Error Handling**: Clear error messages with dismiss functionality
+- ✅ **Rust SFTP Client**: Complete implementation using ssh2 crate
+- ✅ **FFI Bridge**: Regenerated with sftpListDir, sftpUpload, sftpDownload, sftpMkdir, sftpDelete functions
+- ✅ **State Management**: Riverpod Notifier pattern for SFTP browser state
+- ✅ **Security**: All transfers over secure SSH tunnels via IAP
 
 ### v1.6.0 (2025-12-19) - Instance Resource Metrics Release
 - ✅ **Resource Display**: Added CPU, RAM, and Disk visualization for all instances
@@ -256,6 +295,6 @@
 
 ---
 
-**Last Updated**: 2025-12-19
+**Last Updated**: 2025-12-20
 **Maintained By**: Jordi Lopez Reyes
 **Status Review Frequency**: After each major release

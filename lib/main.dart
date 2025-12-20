@@ -5,6 +5,7 @@ import 'src/bridge/api.dart/gcloud.dart';
 import 'src/bridge/api.dart/remmina.dart';
 import 'src/bridge/api.dart/frb_generated.dart';
 import 'src/features/gcloud_provider.dart';
+import 'src/features/sftp_browser.dart';
 import 'src/services/storage_service.dart';
 
 /// Helper: Get all active tunnels for a given instance
@@ -642,6 +643,69 @@ class InstanceDetailPane extends ConsumerWidget {
                         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("SSH Error: $e")));
                       }
                    }
+                },
+              ),
+              _ActionButton(
+                icon: Icons.folder_open,
+                label: "Transfer Files",
+                backgroundColor: Colors.orange.shade50,
+                foregroundColor: Colors.orange.shade700,
+                onPressed: (!isRunning) ? null : () async {
+                  // Ensure SSH tunnel (port 22) exists
+                  final tunnelKey = makeTunnelKey(selectedInstance.name, 22);
+                  final sshTunnel = connections[tunnelKey];
+
+                  if (sshTunnel == null || sshTunnel.status != 'connected') {
+                    // Auto-create SSH tunnel
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("Creating SSH tunnel for file transfer..."))
+                    );
+                    await ref.read(activeConnectionsProvider.notifier).connect(
+                      selectedProject,
+                      selectedInstance.zone,
+                      selectedInstance.name,
+                      remotePort: 22,
+                    );
+
+                    // Wait a moment for tunnel to establish
+                    await Future.delayed(const Duration(seconds: 2));
+
+                    final updatedTunnel = ref.read(activeConnectionsProvider)[tunnelKey];
+                    if (updatedTunnel?.status != 'connected') {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text("Failed to create SSH tunnel"))
+                        );
+                      }
+                      return;
+                    }
+                  }
+
+                  // Get tunnel port and username
+                  final tunnel = ref.read(activeConnectionsProvider)[tunnelKey];
+                  if (tunnel != null && tunnel.port != null && context.mounted) {
+                    try {
+                      final username = await getUsername();
+
+                      if (context.mounted) {
+                        showDialog(
+                          context: context,
+                          builder: (context) => SftpBrowserDialog(
+                            host: 'localhost',
+                            port: tunnel.port!,
+                            username: username,
+                            instanceName: selectedInstance.name,
+                          ),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Error: $e"))
+                        );
+                      }
+                    }
+                  }
                 },
               ),
               _ActionButton(

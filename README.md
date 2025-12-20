@@ -4,18 +4,30 @@
 
 Desarrollada por **Jordi Lopez Reyes** con **Flutter** y **Rust** para un rendimiento y seguridad óptimos.
 
-![Status](https://img.shields.io/badge/Status-Stable%20v1.6.0-brightgreen)
+![Status](https://img.shields.io/badge/Status-Stable%20v1.7.0-brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-Linux-blue)
 ![License](https://img.shields.io/badge/License-MIT-purple)
 ![Security](https://img.shields.io/badge/Security-Hardened-success)
 ![Multi-Tunnel](https://img.shields.io/badge/Multi--Tunnel-Enabled-blue)
 ![Metrics](https://img.shields.io/badge/Instance%20Metrics-Enabled-orange)
+![SFTP](https://img.shields.io/badge/SFTP-Enabled-green)
 
 <img width="1024" height="768" alt="image" src="https://github.com/user-attachments/assets/b510f43b-2a42-462b-9a4e-bfe8618068a5" />
 
 ## ✨ Características Clave
 
-### 📊 Instance Resource Metrics (v1.6.0) - NUEVO
+### 📁 SFTP File Transfer Browser (v1.7.0) - NUEVO
+*   **🗂️ Navegador de Archivos:** Interfaz gráfica completa para explorar archivos remotos vía SFTP
+*   **⬆️ Upload Files:** Sube archivos locales a la instancia remota con progreso visual
+*   **⬇️ Download Files:** Descarga archivos desde la instancia a tu máquina local
+*   **📂 Directory Management:** Crea nuevas carpetas y elimina archivos/directorios remotos
+*   **🔒 Secure Transfer:** Conexiones SFTP sobre túneles SSH IAP (puerto 22)
+*   **🔄 Auto-Tunnel:** Crea automáticamente túnel SSH si no existe al abrir el navegador
+*   **🎨 File Type Icons:** Iconos diferenciados por tipo de archivo (documentos, imágenes, código, etc.)
+*   **📏 Size Formatting:** Formateo automático de tamaños (B, KB, MB, GB)
+*   **❌ Error Handling:** Mensajes de error claros y manejables con opción de reintentar
+
+### 📊 Instance Resource Metrics (v1.6.0)
 *   **💾 Información de Recursos:** Visualiza CPU, RAM y Disco de cada instancia en tiempo real
 *   **🎯 Machine Type Intelligence:** Mapeo automático de tipos de máquina a especificaciones (e2-micro, n1-standard, n2, c2, etc.)
 *   **📈 Dashboard Visual:** Tarjeta dedicada con chips individuales para cada métrica
@@ -64,6 +76,7 @@ Desarrollada por **Jordi Lopez Reyes** con **Flutter** y **Rust** para un rendim
 1.  **Google Cloud SDK (`gcloud`):** Instalado y en el PATH.
 2.  **Remmina:** Cliente RDP (Nativo o Flatpak).
 3.  **Librerías del Sistema:** `libsecret-1-dev`, `libjsoncpp-dev` (para almacenamiento seguro).
+4.  **SSH Agent:** Para autenticación SFTP (usualmente ya incluido en distribuciones Linux modernas).
 
 ## 🚀 Compilación e Instalación
 
