@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
-import 'dart:io';
 import '../bridge/api.dart/api.dart';
 import '../bridge/api.dart/sftp.dart';
 
@@ -88,10 +87,21 @@ class SftpBrowserNotifier extends Notifier<SftpBrowserState> {
         files: files,
         isLoading: false,
       );
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Structured logging for debugging
+      debugPrint('═══ SFTP ERROR: Directory Listing ═══');
+      debugPrint('Operation: List directory');
+      debugPrint('Host: $host:$port');
+      debugPrint('Username: $username');
+      debugPrint('Remote Path: $dirPath');
+      debugPrint('Error Type: ${e.runtimeType}');
+      debugPrint('Error Message: $e');
+      debugPrint('Stack Trace:\n$stackTrace');
+      debugPrint('═════════════════════════════════════');
+
       state = state.copyWith(
         isLoading: false,
-        error: 'Failed to load directory: $e',
+        error: 'Failed to load directory "$dirPath": $e\n\nCheck permissions and network connectivity.',
       );
     }
   }
@@ -108,16 +118,37 @@ class SftpBrowserNotifier extends Notifier<SftpBrowserState> {
     state = state.copyWith(error: null);
   }
 
+  /// Sanitize filename to prevent command injection and path traversal
+  String _sanitizeFilename(String filename) {
+    return filename
+        // Remove path separators
+        .replaceAll(RegExp(r'[/\\\0]'), '_')
+        // Remove shell metacharacters that could enable command injection
+        .replaceAll(RegExp(r'[;&|`$()]'), '_')
+        // Remove other potentially dangerous characters
+        .replaceAll(RegExp(r'[<>"]'), '_')
+        // Collapse multiple underscores
+        .replaceAll(RegExp(r'_+'), '_')
+        // Trim leading/trailing underscores and whitespace
+        .trim()
+        .replaceAll(RegExp(r'^_+|_+$'), '');
+  }
+
   Future<void> uploadFile() async {
+    String? fileName;
+    String? localPath;
+    String? remotePath;
+
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles();
 
       if (result != null && result.files.single.path != null) {
-        state = state.copyWith(operationInProgress: 'Uploading ${result.files.single.name}...');
+        localPath = result.files.single.path!;
+        // Sanitize filename to prevent injection attacks
+        fileName = _sanitizeFilename(path.basename(localPath));
+        remotePath = path.join(state.currentPath, fileName);
 
-        final localPath = result.files.single.path!;
-        final fileName = path.basename(localPath);
-        final remotePath = path.join(state.currentPath, fileName);
+        state = state.copyWith(operationInProgress: 'Uploading $fileName...');
 
         await sftpUpload(
           host: host,
@@ -130,22 +161,36 @@ class SftpBrowserNotifier extends Notifier<SftpBrowserState> {
         state = state.copyWith(operationInProgress: null);
         await refresh();
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Structured logging for debugging
+      debugPrint('═══ SFTP ERROR: Upload File ═══');
+      debugPrint('Operation: Upload file');
+      debugPrint('Host: $host:$port');
+      debugPrint('Username: $username');
+      debugPrint('File Name: ${fileName ?? "unknown"}');
+      debugPrint('Local Path: ${localPath ?? "unknown"}');
+      debugPrint('Remote Path: ${remotePath ?? "unknown"}');
+      debugPrint('Error Type: ${e.runtimeType}');
+      debugPrint('Error Message: $e');
+      debugPrint('Stack Trace:\n$stackTrace');
+      debugPrint('════════════════════════════════');
+
       state = state.copyWith(
         operationInProgress: null,
-        error: 'Upload failed: $e',
+        error: 'Failed to upload "${fileName ?? "file"}": $e\n\nCheck file permissions and disk space.',
       );
     }
   }
 
   Future<void> downloadFile(RemoteFileEntry file) async {
+    String? localPath;
+
     try {
       String? selectedDirectory = await FilePicker.platform.getDirectoryPath();
 
       if (selectedDirectory != null) {
+        localPath = path.join(selectedDirectory, file.name);
         state = state.copyWith(operationInProgress: 'Downloading ${file.name}...');
-
-        final localPath = path.join(selectedDirectory, file.name);
 
         await sftpDownload(
           host: host,
@@ -157,19 +202,74 @@ class SftpBrowserNotifier extends Notifier<SftpBrowserState> {
 
         state = state.copyWith(operationInProgress: null);
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Structured logging for debugging
+      debugPrint('═══ SFTP ERROR: Download File ═══');
+      debugPrint('Operation: Download file');
+      debugPrint('Host: $host:$port');
+      debugPrint('Username: $username');
+      debugPrint('File Name: ${file.name}');
+      debugPrint('File Size: ${file.size} bytes');
+      debugPrint('Remote Path: ${file.path}');
+      debugPrint('Local Path: ${localPath ?? "unknown"}');
+      debugPrint('Error Type: ${e.runtimeType}');
+      debugPrint('Error Message: $e');
+      debugPrint('Stack Trace:\n$stackTrace');
+      debugPrint('══════════════════════════════════');
+
       state = state.copyWith(
         operationInProgress: null,
-        error: 'Download failed: $e',
+        error: 'Failed to download "${file.name}": $e\n\nCheck local disk space and permissions.',
       );
     }
   }
 
   Future<void> createDirectory(String dirName) async {
-    try {
-      state = state.copyWith(operationInProgress: 'Creating directory...');
+    String? remotePath;
 
-      final remotePath = path.join(state.currentPath, dirName);
+    // Input validation: Prevent directory name injection attacks
+    final trimmedName = dirName.trim();
+
+    if (trimmedName.isEmpty) {
+      state = state.copyWith(
+        error: 'Directory name cannot be empty.',
+      );
+      return;
+    }
+
+    if (trimmedName.contains('/') || trimmedName.contains('\\')) {
+      state = state.copyWith(
+        error: 'Directory name cannot contain path separators (/ or \\).',
+      );
+      return;
+    }
+
+    if (trimmedName.contains('..')) {
+      state = state.copyWith(
+        error: 'Directory name cannot contain ".." (parent directory references).',
+      );
+      return;
+    }
+
+    if (trimmedName.length > 255) {
+      state = state.copyWith(
+        error: 'Directory name too long (max 255 characters).',
+      );
+      return;
+    }
+
+    // Note: We allow names starting with '.' for hidden directories (Unix convention)
+    // If you want to prevent hidden directories, uncomment:
+    // if (trimmedName.startsWith('.')) {
+    //   state = state.copyWith(
+    //     error: 'Directory name cannot start with "." (hidden directories not allowed).',
+    //   );
+    //   return;
+    // }
+
+    try {
+      remotePath = path.join(state.currentPath, trimmedName);
+      state = state.copyWith(operationInProgress: 'Creating directory...');
 
       await sftpMkdir(
         host: host,
@@ -180,10 +280,23 @@ class SftpBrowserNotifier extends Notifier<SftpBrowserState> {
 
       state = state.copyWith(operationInProgress: null);
       await refresh();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Structured logging for debugging
+      debugPrint('═══ SFTP ERROR: Create Directory ═══');
+      debugPrint('Operation: Create directory');
+      debugPrint('Host: $host:$port');
+      debugPrint('Username: $username');
+      debugPrint('Directory Name: $dirName');
+      debugPrint('Parent Path: ${state.currentPath}');
+      debugPrint('Full Path: ${remotePath ?? "unknown"}');
+      debugPrint('Error Type: ${e.runtimeType}');
+      debugPrint('Error Message: $e');
+      debugPrint('Stack Trace:\n$stackTrace');
+      debugPrint('═════════════════════════════════════');
+
       state = state.copyWith(
         operationInProgress: null,
-        error: 'Failed to create directory: $e',
+        error: 'Failed to create directory "$dirName": $e\n\nCheck remote permissions.',
       );
     }
   }
@@ -202,10 +315,23 @@ class SftpBrowserNotifier extends Notifier<SftpBrowserState> {
 
       state = state.copyWith(operationInProgress: null);
       await refresh();
-    } catch (e) {
+    } catch (e, stackTrace) {
+      // Structured logging for debugging
+      debugPrint('═══ SFTP ERROR: Delete Entry ═══');
+      debugPrint('Operation: Delete ${file.isDirectory ? "directory" : "file"}');
+      debugPrint('Host: $host:$port');
+      debugPrint('Username: $username');
+      debugPrint('Entry Name: ${file.name}');
+      debugPrint('Entry Path: ${file.path}');
+      debugPrint('Is Directory: ${file.isDirectory}');
+      debugPrint('Error Type: ${e.runtimeType}');
+      debugPrint('Error Message: $e');
+      debugPrint('Stack Trace:\n$stackTrace');
+      debugPrint('═════════════════════════════════');
+
       state = state.copyWith(
         operationInProgress: null,
-        error: 'Failed to delete: $e',
+        error: 'Failed to delete "${file.name}": $e\n\nCheck remote permissions and ensure it\'s not in use.',
       );
     }
   }
@@ -297,6 +423,19 @@ class _SftpBrowserDialogState extends ConsumerState<SftpBrowserDialog> {
               padding: const EdgeInsets.symmetric(vertical: 8.0),
               child: Row(
                 children: [
+                  // Parent Directory Navigation Button
+                  IconButton(
+                    onPressed: (state.isLoading || state.currentPath == '/home/${widget.username}')
+                        ? null
+                        : () {
+                            final parentPath = path.dirname(state.currentPath);
+                            ref.read(provider.notifier).navigateTo(parentPath);
+                          },
+                    icon: const Icon(Icons.arrow_upward),
+                    tooltip: 'Go to parent directory',
+                    color: Colors.blue.shade700,
+                  ),
+                  const SizedBox(width: 8),
                   ElevatedButton.icon(
                     onPressed: state.isLoading ? null : () => ref.read(provider.notifier).uploadFile(),
                     icon: const Icon(Icons.upload, size: 18),
@@ -429,7 +568,7 @@ class _SftpBrowserDialogState extends ConsumerState<SftpBrowserDialog> {
           ),
         ],
       ),
-    );
+    ).then((_) => controller.dispose()); // Dispose controller when dialog closes
   }
 
   void _showDeleteConfirmation(RemoteFileEntry file) {
@@ -534,9 +673,15 @@ class _FileListTile extends StatelessWidget {
   }
 
   String _formatFileSize(BigInt bytes) {
-    final b = bytes.toInt();
-    if (b < 1024) return '$b B';
-    if (b < 1024 * 1024) return '${(b / 1024).toStringAsFixed(1)} KB';
+    // Use toDouble() to avoid overflow for very large files
+    final double b = bytes.toDouble();
+
+    if (b < 1024) {
+      return '${bytes.toInt()} B';  // Safe: small values
+    }
+    if (b < 1024 * 1024) {
+      return '${(b / 1024).toStringAsFixed(1)} KB';
+    }
     if (b < 1024 * 1024 * 1024) {
       return '${(b / (1024 * 1024)).toStringAsFixed(1)} MB';
     }

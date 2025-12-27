@@ -49,6 +49,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Linux Cloud Connector',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
         useMaterial3: true,
@@ -491,7 +492,7 @@ class InstanceDetailPane extends ConsumerWidget {
     final activeTunnels = getTunnelsForInstance(connections, selectedInstance.name);
     final isConnected = activeTunnels.any((t) => t.value.status == 'connected');
     final isConnecting = activeTunnels.any((t) => t.value.status == 'connecting');
-    final errorTunnels = activeTunnels.where((t) => t.value.error != null).toList();
+    // final errorTunnels = activeTunnels.where((t) => t.value.error != null).toList();
     final isRunning = selectedInstance.status == "RUNNING";
 
     return SingleChildScrollView(
@@ -673,19 +674,96 @@ class InstanceDetailPane extends ConsumerWidget {
                         selectedInstance.name,
                         remotePort: 22,
                       );
-                      if (newPort != null) tunnelPort = newPort;
+
+                      if (newPort == null) {
+                        // Tunnel creation failed - provide explicit error feedback
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                "Failed to create SSH tunnel for SFTP.\n\n"
+                                "Please verify:\n"
+                                "• Instance is RUNNING\n"
+                                "• You have IAP tunnel permissions\n"
+                                "• Network connectivity is working\n"
+                                "• gcloud CLI is authenticated"
+                              ),
+                              backgroundColor: Colors.red,
+                              duration: const Duration(seconds: 8),
+                              action: SnackBarAction(
+                                label: 'Retry',
+                                textColor: Colors.white,
+                                onPressed: () {
+                                  // User can click to retry
+                                },
+                              ),
+                            ),
+                          );
+                        }
+                        return; // Exit without opening dialog
+                      }
+
+                      tunnelPort = newPort;
                     }
 
-                    if (tunnelPort != null) {
-                       ScaffoldMessenger.of(context).showSnackBar(
-                         const SnackBar(content: Text("Launching File Manager..."))
-                       );
-                       await launchSftp(port: tunnelPort, username: null); // Let Rust detect username
+                    // At this point, tunnelPort is guaranteed to be non-null
+                    if (context.mounted) {
+                      // Get current username
+                      final username = await getUsername();
+
+                      if (context.mounted) {
+                        // Open integrated SFTP browser dialog
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => SftpBrowserDialog(
+                            host: 'localhost',
+                            port: tunnelPort!, // Safe: checked for null above
+                            username: username,
+                            instanceName: selectedInstance.name,
+                          ),
+                        );
+                      }
                     }
-                  } catch (e) {
+                  } on StateError catch (e) {
+                    // State management errors (Riverpod/Provider issues)
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text("SFTP Error: $e"), backgroundColor: Colors.red),
+                        SnackBar(
+                          content: Text("State error: $e\nPlease restart the app."),
+                          backgroundColor: Colors.red,
+                          duration: const Duration(seconds: 6),
+                        ),
+                      );
+                    }
+                  } on Exception catch (e) {
+                    // Expected runtime errors (network, permissions, etc.)
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Failed to open SFTP browser: $e"),
+                          backgroundColor: Colors.red,
+                          duration: const Duration(seconds: 5),
+                        ),
+                      );
+                    }
+                  } catch (e, stackTrace) {
+                    // Unexpected errors - these are bugs that need fixing!
+                    debugPrint("═══ UNEXPECTED SFTP ERROR ═══");
+                    debugPrint("Error: $e");
+                    debugPrint("Type: ${e.runtimeType}");
+                    debugPrint("Stack: $stackTrace");
+                    debugPrint("════════════════════════════");
+
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text(
+                            "An unexpected error occurred.\n"
+                            "Please check console logs and report this bug."
+                          ),
+                          backgroundColor: Colors.red,
+                          duration: const Duration(seconds: 8),
+                        ),
                       );
                     }
                   }
