@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as path;
+import 'package:desktop_drop/desktop_drop.dart';
+import 'package:cross_file/cross_file.dart';
 import '../bridge/api.dart/api.dart';
 import '../bridge/api.dart/sftp.dart';
 
@@ -12,6 +15,7 @@ class SftpBrowserState {
   final bool isLoading;
   final String? error;
   final String? operationInProgress;
+  final String searchQuery;
 
   const SftpBrowserState({
     this.currentPath = '/home',
@@ -19,6 +23,7 @@ class SftpBrowserState {
     this.isLoading = false,
     this.error,
     this.operationInProgress,
+    this.searchQuery = '',
   });
 
   SftpBrowserState copyWith({
@@ -27,6 +32,7 @@ class SftpBrowserState {
     bool? isLoading,
     String? error,
     String? operationInProgress,
+    String? searchQuery,
   }) {
     return SftpBrowserState(
       currentPath: currentPath ?? this.currentPath,
@@ -34,7 +40,17 @@ class SftpBrowserState {
       isLoading: isLoading ?? this.isLoading,
       error: error,
       operationInProgress: operationInProgress,
+      searchQuery: searchQuery ?? this.searchQuery,
     );
+  }
+
+  /// Get filtered files based on search query
+  List<RemoteFileEntry> get filteredFiles {
+    if (searchQuery.isEmpty) return files;
+    final query = searchQuery.toLowerCase();
+    return files.where((file) {
+      return file.name.toLowerCase().contains(query);
+    }).toList();
   }
 }
 
@@ -118,6 +134,14 @@ class SftpBrowserNotifier extends Notifier<SftpBrowserState> {
     state = state.copyWith(error: null);
   }
 
+  void updateSearchQuery(String query) {
+    state = state.copyWith(searchQuery: query);
+  }
+
+  void clearSearch() {
+    state = state.copyWith(searchQuery: '');
+  }
+
   /// Sanitize filename to prevent command injection and path traversal
   String _sanitizeFilename(String filename) {
     return filename
@@ -178,6 +202,53 @@ class SftpBrowserNotifier extends Notifier<SftpBrowserState> {
       state = state.copyWith(
         operationInProgress: null,
         error: 'Failed to upload "${fileName ?? "file"}": $e\n\nCheck file permissions and disk space.',
+      );
+    }
+  }
+
+  /// Upload multiple files from drag & drop
+  Future<void> uploadFiles(List<XFile> files) async {
+    if (files.isEmpty) return;
+
+    try {
+      final totalFiles = files.length;
+      int uploadedCount = 0;
+
+      for (final file in files) {
+        uploadedCount++;
+        final fileName = _sanitizeFilename(path.basename(file.path));
+        final remotePath = path.join(state.currentPath, fileName);
+
+        state = state.copyWith(
+          operationInProgress: 'Uploading $uploadedCount/$totalFiles: $fileName...',
+        );
+
+        await sftpUpload(
+          host: host,
+          port: port,
+          username: username,
+          localPath: file.path,
+          remotePath: remotePath,
+        );
+      }
+
+      state = state.copyWith(operationInProgress: null);
+      await refresh();
+    } catch (e, stackTrace) {
+      // Structured logging for debugging
+      debugPrint('═══ SFTP ERROR: Batch Upload ═══');
+      debugPrint('Operation: Upload multiple files');
+      debugPrint('Host: $host:$port');
+      debugPrint('Username: $username');
+      debugPrint('Total Files: ${files.length}');
+      debugPrint('Error Type: ${e.runtimeType}');
+      debugPrint('Error Message: $e');
+      debugPrint('Stack Trace:\n$stackTrace');
+      debugPrint('═════════════════════════════════');
+
+      state = state.copyWith(
+        operationInProgress: null,
+        error: 'Failed to upload files: $e\n\nSome files may have been uploaded successfully.',
       );
     }
   }
@@ -335,6 +406,40 @@ class SftpBrowserNotifier extends Notifier<SftpBrowserState> {
       );
     }
   }
+
+  /// Download file to temp directory for preview
+  Future<String?> downloadForPreview(RemoteFileEntry file) async {
+    try {
+      state = state.copyWith(operationInProgress: 'Loading preview...');
+
+      // Create temp directory
+      final tempDir = await Directory.systemTemp.createTemp('sftp_preview_');
+      final localPath = path.join(tempDir.path, file.name);
+
+      await sftpDownload(
+        host: host,
+        port: port,
+        username: username,
+        remotePath: file.path,
+        localPath: localPath,
+      );
+
+      state = state.copyWith(operationInProgress: null);
+      return localPath;
+    } catch (e, stackTrace) {
+      debugPrint('═══ SFTP ERROR: Preview Download ═══');
+      debugPrint('File: ${file.name}');
+      debugPrint('Error: $e');
+      debugPrint('Stack: $stackTrace');
+      debugPrint('═════════════════════════════════════');
+
+      state = state.copyWith(
+        operationInProgress: null,
+        error: 'Failed to load preview: $e',
+      );
+      return null;
+    }
+  }
 }
 
 // Create a unique provider for each SFTP session
@@ -363,6 +468,7 @@ class SftpBrowserDialog extends ConsumerStatefulWidget {
 
 class _SftpBrowserDialogState extends ConsumerState<SftpBrowserDialog> {
   late final NotifierProvider<SftpBrowserNotifier, SftpBrowserState> provider;
+  bool _isDragging = false;
 
   @override
   void initState() {
@@ -417,6 +523,29 @@ class _SftpBrowserDialogState extends ConsumerState<SftpBrowserDialog> {
               ],
             ),
             const Divider(),
+
+            // Search Bar
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search files and folders...',
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  suffixIcon: state.searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 20),
+                          onPressed: () => ref.read(provider.notifier).clearSearch(),
+                        )
+                      : null,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  isDense: true,
+                ),
+                onChanged: (value) => ref.read(provider.notifier).updateSearchQuery(value),
+              ),
+            ),
 
             // Toolbar
             Padding(
@@ -506,30 +635,115 @@ class _SftpBrowserDialogState extends ConsumerState<SftpBrowserDialog> {
                 ),
               ),
 
-            // File list
+            // File list with drag & drop support
             Expanded(
-              child: state.isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ListView.builder(
-                      itemCount: state.files.length,
-                      itemBuilder: (context, index) {
-                        final file = state.files[index];
-                        return _FileListTile(
-                          file: file,
-                          onTap: () {
-                            if (file.isDirectory) {
-                              ref.read(provider.notifier).navigateTo(file.path);
-                            }
-                          },
-                          onDownload: file.isDirectory ? null : () {
-                            ref.read(provider.notifier).downloadFile(file);
-                          },
-                          onDelete: file.name == '..' ? null : () {
-                            _showDeleteConfirmation(file);
-                          },
-                        );
-                      },
+              child: DropTarget(
+                onDragEntered: (details) {
+                  setState(() => _isDragging = true);
+                },
+                onDragExited: (details) {
+                  setState(() => _isDragging = false);
+                },
+                onDragDone: (details) async {
+                  setState(() => _isDragging = false);
+                  await ref.read(provider.notifier).uploadFiles(details.files);
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: _isDragging ? Colors.blue : Colors.transparent,
+                      width: 3,
                     ),
+                    borderRadius: BorderRadius.circular(8),
+                    color: _isDragging ? Colors.blue.withValues(alpha: 0.05) : null,
+                  ),
+                  child: state.isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : state.filteredFiles.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    _isDragging
+                                        ? Icons.file_upload
+                                        : (state.searchQuery.isEmpty ? Icons.folder_open : Icons.search_off),
+                                    size: 64,
+                                    color: _isDragging ? Colors.blue : Colors.grey.shade400,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    _isDragging
+                                        ? 'Drop files here to upload'
+                                        : (state.searchQuery.isEmpty
+                                            ? 'This folder is empty\n\nDrag & drop files here to upload'
+                                            : 'No files match "${state.searchQuery}"'),
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: _isDragging ? Colors.blue : Colors.grey.shade600,
+                                      fontSize: 16,
+                                      fontWeight: _isDragging ? FontWeight.bold : FontWeight.normal,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Stack(
+                              children: [
+                                ListView.builder(
+                                  itemCount: state.filteredFiles.length,
+                                  itemBuilder: (context, index) {
+                                    final file = state.filteredFiles[index];
+                                    return _FileListTile(
+                                      file: file,
+                                      searchQuery: state.searchQuery,
+                                      onTap: () {
+                                        if (file.isDirectory) {
+                                          ref.read(provider.notifier).navigateTo(file.path);
+                                        }
+                                      },
+                                      onPreview: _canPreview(file) && !file.isDirectory
+                                          ? () => _showPreview(file)
+                                          : null,
+                                      onDownload: file.isDirectory ? null : () {
+                                        ref.read(provider.notifier).downloadFile(file);
+                                      },
+                                      onDelete: file.name == '..' ? null : () {
+                                        _showDeleteConfirmation(file);
+                                      },
+                                    );
+                                  },
+                                ),
+                                // Drag overlay
+                                if (_isDragging)
+                                  Container(
+                                    color: Colors.blue.withValues(alpha: 0.1),
+                                    child: Center(
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.file_upload,
+                                            size: 80,
+                                            color: Colors.blue.shade700,
+                                          ),
+                                          const SizedBox(height: 16),
+                                          Text(
+                                            'Drop files here to upload',
+                                            style: TextStyle(
+                                              fontSize: 24,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.blue.shade700,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                ),
+              ),
             ),
           ],
         ),
@@ -594,18 +808,98 @@ class _SftpBrowserDialogState extends ConsumerState<SftpBrowserDialog> {
       ),
     );
   }
+
+  /// Check if file can be previewed
+  bool _canPreview(RemoteFileEntry file) {
+    if (file.isDirectory || file.name == '..') return false;
+
+    final ext = path.extension(file.name).toLowerCase();
+    const textExtensions = ['.txt', '.md', '.log', '.json', '.xml', '.yaml', '.yml', '.conf', '.ini', '.sh', '.py', '.js', '.dart', '.html', '.css', '.sql'];
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+
+    return textExtensions.contains(ext) || imageExtensions.contains(ext);
+  }
+
+  /// Show file preview dialog
+  Future<void> _showPreview(RemoteFileEntry file) async {
+    final localPath = await ref.read(provider.notifier).downloadForPreview(file);
+    if (localPath == null || !mounted) return;
+
+    final ext = path.extension(file.name).toLowerCase();
+    const imageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'];
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        child: Container(
+          width: 800,
+          height: 600,
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Row(
+                children: [
+                  Icon(
+                    imageExtensions.contains(ext) ? Icons.image : Icons.description,
+                    color: Colors.blue,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      file.name,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      // Clean up temp file
+                      try {
+                        File(localPath).deleteSync();
+                      } catch (_) {}
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              ),
+              const Divider(),
+              // Content
+              Expanded(
+                child: imageExtensions.contains(ext)
+                    ? _ImagePreview(filePath: localPath)
+                    : _TextPreview(filePath: localPath),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ).then((_) {
+      // Clean up temp file after dialog closes
+      try {
+        File(localPath).deleteSync();
+      } catch (_) {}
+    });
+  }
 }
 
 // File List Tile Widget
 class _FileListTile extends StatelessWidget {
   final RemoteFileEntry file;
+  final String searchQuery;
   final VoidCallback onTap;
+  final VoidCallback? onPreview;
   final VoidCallback? onDownload;
   final VoidCallback? onDelete;
 
   const _FileListTile({
     required this.file,
+    required this.searchQuery,
     required this.onTap,
+    this.onPreview,
     this.onDownload,
     this.onDelete,
   });
@@ -618,7 +912,7 @@ class _FileListTile extends StatelessWidget {
         color: file.isDirectory ? Colors.blue.shade400 : Colors.grey.shade600,
         size: 28,
       ),
-      title: Text(file.name),
+      title: _buildHighlightedText(file.name, searchQuery),
       subtitle: file.isDirectory
           ? const Text('Folder')
           : Text(_formatFileSize(file.size)),
@@ -627,6 +921,13 @@ class _FileListTile extends StatelessWidget {
           : Row(
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (onPreview != null)
+                  IconButton(
+                    icon: const Icon(Icons.visibility, size: 20),
+                    onPressed: onPreview,
+                    tooltip: 'Preview',
+                    color: Colors.blue.shade600,
+                  ),
                 if (onDownload != null)
                   IconButton(
                     icon: const Icon(Icons.download, size: 20),
@@ -686,5 +987,167 @@ class _FileListTile extends StatelessWidget {
       return '${(b / (1024 * 1024)).toStringAsFixed(1)} MB';
     }
     return '${(b / (1024 * 1024 * 1024)).toStringAsFixed(1)} GB';
+  }
+
+  /// Build text with search query highlighted
+  Widget _buildHighlightedText(String text, String query) {
+    if (query.isEmpty) {
+      return Text(text);
+    }
+
+    final lowerText = text.toLowerCase();
+    final lowerQuery = query.toLowerCase();
+    final matches = <TextSpan>[];
+    int currentIndex = 0;
+
+    while (currentIndex < text.length) {
+      final matchIndex = lowerText.indexOf(lowerQuery, currentIndex);
+
+      if (matchIndex == -1) {
+        // No more matches, add remaining text
+        if (currentIndex < text.length) {
+          matches.add(TextSpan(text: text.substring(currentIndex)));
+        }
+        break;
+      }
+
+      // Add text before match
+      if (matchIndex > currentIndex) {
+        matches.add(TextSpan(text: text.substring(currentIndex, matchIndex)));
+      }
+
+      // Add highlighted match
+      matches.add(
+        TextSpan(
+          text: text.substring(matchIndex, matchIndex + query.length),
+          style: const TextStyle(
+            backgroundColor: Colors.yellow,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+      );
+
+      currentIndex = matchIndex + query.length;
+    }
+
+    return RichText(
+      text: TextSpan(
+        style: const TextStyle(color: Colors.black87, fontSize: 14),
+        children: matches,
+      ),
+    );
+  }
+}
+
+// Text File Preview Widget
+class _TextPreview extends StatefulWidget {
+  final String filePath;
+
+  const _TextPreview({required this.filePath});
+
+  @override
+  State<_TextPreview> createState() => _TextPreviewState();
+}
+
+class _TextPreviewState extends State<_TextPreview> {
+  String? _content;
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFile();
+  }
+
+  Future<void> _loadFile() async {
+    try {
+      final file = File(widget.filePath);
+      final content = await file.readAsString();
+      if (mounted) {
+        setState(() {
+          _content = content;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Failed to load file: $e';
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            Text(_error!, style: const TextStyle(color: Colors.red)),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade100,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: SingleChildScrollView(
+        child: SelectableText(
+          _content ?? '',
+          style: const TextStyle(
+            fontFamily: 'monospace',
+            fontSize: 13,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Image File Preview Widget
+class _ImagePreview extends StatelessWidget {
+  final String filePath;
+
+  const _ImagePreview({required this.filePath});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: InteractiveViewer(
+        minScale: 0.1,
+        maxScale: 5.0,
+        child: Image.file(
+          File(filePath),
+          errorBuilder: (context, error, stackTrace) {
+            return Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.broken_image, size: 64, color: Colors.red),
+                const SizedBox(height: 16),
+                Text(
+                  'Failed to load image',
+                  style: TextStyle(color: Colors.red.shade700),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
   }
 }

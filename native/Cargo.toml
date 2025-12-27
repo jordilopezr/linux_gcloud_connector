@@ -20,3 +20,9 @@ tokio = { version = "1.48.0", features = ["rt", "time", "process", "io-util", "f
 tracing = "0.1.41"
 tracing-subscriber = { version = "0.3.19", features = ["env-filter", "fmt", "json"] }
 tracing-appender = "0.2.3"
+
+# Google Cloud Client Libraries - PoC
+google-cloud-auth = "0.17"
+google-cloud-googleapis = "0.14"
+gcp-bigquery-client = "0.22"  # Includes common auth utilities
+reqwest = { version = "0.12", features = ["json"] }
