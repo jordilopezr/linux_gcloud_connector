@@ -3,7 +3,7 @@
 # Configuración
 APP_NAME="linux-cloud-connector" # Debian prefiere guiones
 BINARY_NAME="linux_cloud_connector"
-VERSION="1.2.1"
+VERSION="1.8.0"
 ARCH="amd64"
 MAINTAINER="Jordi Lopez Reyes <aim@jordilopezr.com>"
 DESCRIPTION="Native Google Cloud IAP Connector for Linux"
