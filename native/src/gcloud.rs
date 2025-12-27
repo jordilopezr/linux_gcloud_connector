@@ -65,7 +65,7 @@ pub fn is_gcloud_authenticated() -> bool {
 }
 
 /// Async version with timeout
-async fn get_projects_async() -> Result<Vec<GcpProject>> {
+pub async fn get_projects_async() -> Result<Vec<GcpProject>> {
     // 10 second timeout for listing projects
     let output = timeout(
         Duration::from_secs(10),
@@ -95,47 +95,78 @@ pub fn get_projects() -> Result<Vec<GcpProject>> {
 }
 
 /// Extract CPU and memory specs from machine type name
-/// Returns (cpu_count, memory_mb) if the machine type is recognized
+/// Supports standard machine types by parsing their pattern (e.g., "e2-standard-4" → 4 CPUs)
+/// Returns (cpu_count, memory_mb) if the machine type can be determined
 fn get_machine_specs(machine_type: &str) -> Option<(u32, u32)> {
+    // Special cases (micro, small, medium)
     match machine_type {
-        // E2 series (cost-optimized)
-        "e2-micro" => Some((2, 1024)),
-        "e2-small" => Some((2, 2048)),
-        "e2-medium" => Some((2, 4096)),
-        "e2-standard-2" => Some((2, 8192)),
-        "e2-standard-4" => Some((4, 16384)),
-        "e2-standard-8" => Some((8, 32768)),
-        "e2-standard-16" => Some((16, 65536)),
-        "e2-standard-32" => Some((32, 131072)),
-
-        // N1 series (balanced)
-        "n1-standard-1" => Some((1, 3840)),
-        "n1-standard-2" => Some((2, 7680)),
-        "n1-standard-4" => Some((4, 15360)),
-        "n1-standard-8" => Some((8, 30720)),
-        "n1-standard-16" => Some((16, 61440)),
-        "n1-standard-32" => Some((32, 122880)),
-
-        // N2 series (balanced, newer)
-        "n2-standard-2" => Some((2, 8192)),
-        "n2-standard-4" => Some((4, 16384)),
-        "n2-standard-8" => Some((8, 32768)),
-        "n2-standard-16" => Some((16, 65536)),
-        "n2-standard-32" => Some((32, 131072)),
-
-        // N2D series (AMD)
-        "n2d-standard-2" => Some((2, 8192)),
-        "n2d-standard-4" => Some((4, 16384)),
-        "n2d-standard-8" => Some((8, 32768)),
-
-        // C2 series (compute-optimized)
-        "c2-standard-4" => Some((4, 16384)),
-        "c2-standard-8" => Some((8, 32768)),
-        "c2-standard-16" => Some((16, 65536)),
-
-        // Add more as needed
-        _ => None,
+        "e2-micro" => return Some((2, 1024)),
+        "e2-small" => return Some((2, 2048)),
+        "e2-medium" => return Some((2, 4096)),
+        "f1-micro" => return Some((1, 614)),
+        "g1-small" => return Some((1, 1740)),
+        _ => {}
     }
+
+    // Parse standard machine types: {series}-{type}-{cpus}
+    // Examples: e2-standard-4, n1-standard-8, n2-highmem-16, c2-standard-30
+    let parts: Vec<&str> = machine_type.split('-').collect();
+
+    if parts.len() >= 3 {
+        let series = parts[0];      // e2, n1, n2, n2d, c2, c3, t2d, etc.
+        let type_name = parts[1];   // standard, highmem, highcpu, custom
+
+        // Try to parse CPU count from the last part
+        if let Ok(cpu_count) = parts[2].parse::<u32>() {
+            // Calculate memory based on type and series
+            let memory_mb = match (series, type_name) {
+                // E2 series (cost-optimized): 4GB per vCPU for standard
+                ("e2", "standard") => cpu_count * 4096,
+                ("e2", "highmem") => cpu_count * 8192,
+                ("e2", "highcpu") => cpu_count * 1024,
+
+                // N1 series: 3.75GB per vCPU for standard
+                ("n1", "standard") => cpu_count * 3840,
+                ("n1", "highmem") => cpu_count * 6656,
+                ("n1", "highcpu") => cpu_count * 922,
+
+                // N2/N2D series: 4GB per vCPU for standard
+                ("n2" | "n2d", "standard") => cpu_count * 4096,
+                ("n2" | "n2d", "highmem") => cpu_count * 8192,
+                ("n2" | "n2d", "highcpu") => cpu_count * 1024,
+
+                // C2 series (compute-optimized): 4GB per vCPU
+                ("c2", "standard") => cpu_count * 4096,
+
+                // C3 series (newer compute): 4GB per vCPU
+                ("c3", "standard") => cpu_count * 4096,
+                ("c3", "highmem") => cpu_count * 8192,
+                ("c3", "highcpu") => cpu_count * 2048,
+
+                // T2D series (AMD): 4GB per vCPU
+                ("t2d", "standard") => cpu_count * 4096,
+
+                // M1/M2/M3 series (memory-optimized): Much higher memory
+                ("m1", "megamem") => cpu_count * 14336,  // 14GB per vCPU
+                ("m1", "ultramem") => cpu_count * 24576, // 24GB per vCPU
+                ("m2", "megamem") => cpu_count * 14336,
+                ("m2", "ultramem") => cpu_count * 24576,
+                ("m3", "megamem") => cpu_count * 14336,
+                ("m3", "ultramem") => cpu_count * 24576,
+
+                // A2 series (GPU): 12GB per vCPU
+                ("a2", _) => cpu_count * 12288,
+
+                // Default fallback: assume 4GB per vCPU (most common)
+                _ => cpu_count * 4096,
+            };
+
+            return Some((cpu_count, memory_mb));
+        }
+    }
+
+    // If we can't parse it, return None
+    None
 }
 
 /// Async version with timeout

@@ -33,6 +33,14 @@ class StorageService {
     return _sharedPrefs.getString('last_project_id');
   }
 
+  Future<void> saveApiMethod(String method) async {
+    await _sharedPrefs.setString('api_method', method);
+  }
+
+  String getLastApiMethod() {
+    return _sharedPrefs.getString('api_method') ?? 'cli'; // Default to CLI
+  }
+
   // --- Secure Credentials (FlutterSecureStorage) ---
 
   // Key format: "rdp_creds_<instance_name>" -> JSON or separate keys?
