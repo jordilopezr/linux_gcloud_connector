@@ -72,5 +72,9 @@ Cargo.lock
 # Web build artifacts
 /web/
 
+# Project notes and status files
+status.md
+STATUS.md
+
 # Claude Code
 /.claude
