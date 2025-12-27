@@ -19,6 +19,13 @@
 /home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/runner/CMakeFiles/install.dir
 /home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/runner/CMakeFiles/install/local.dir
 /home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/runner/CMakeFiles/install/strip.dir
+/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop/CMakeFiles/desktop_drop_plugin.dir
+/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop/CMakeFiles/edit_cache.dir
+/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop/CMakeFiles/rebuild_cache.dir
+/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop/CMakeFiles/list_install_components.dir
+/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop/CMakeFiles/install.dir
+/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop/CMakeFiles/install/local.dir
+/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop/CMakeFiles/install/strip.dir
 /home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/flutter_secure_storage_linux/CMakeFiles/flutter_secure_storage_linux_plugin.dir
 /home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/flutter_secure_storage_linux/CMakeFiles/edit_cache.dir
 /home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/flutter_secure_storage_linux/CMakeFiles/rebuild_cache.dir

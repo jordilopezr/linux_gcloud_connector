@@ -68,7 +68,7 @@ if(CMAKE_INSTALL_COMPONENT STREQUAL "Runtime" OR NOT CMAKE_INSTALL_COMPONENT)
      NOT IS_SYMLINK "$ENV{DESTDIR}/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/bundle/linux_cloud_connector")
     file(RPATH_CHANGE
          FILE "$ENV{DESTDIR}/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/bundle/linux_cloud_connector"
-         OLD_RPATH "/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/flutter_secure_storage_linux:/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral:"
+         OLD_RPATH "/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop:/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/flutter_secure_storage_linux:/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral:"
          NEW_RPATH "$ORIGIN/lib")
     if(CMAKE_INSTALL_DO_STRIP)
       execute_process(COMMAND "/usr/bin/strip" "$ENV{DESTDIR}/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/bundle/linux_cloud_connector")
@@ -98,6 +98,18 @@ if(CMAKE_INSTALL_COMPONENT STREQUAL "Runtime" OR NOT CMAKE_INSTALL_COMPONENT)
     message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
   endif()
   file(INSTALL DESTINATION "/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/bundle/lib" TYPE FILE FILES "/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral/libflutter_linux_gtk.so")
+endif()
+
+if(CMAKE_INSTALL_COMPONENT STREQUAL "Runtime" OR NOT CMAKE_INSTALL_COMPONENT)
+  list(APPEND CMAKE_ABSOLUTE_DESTINATION_FILES
+   "/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/bundle/lib/libdesktop_drop_plugin.so")
+  if(CMAKE_WARN_ON_ABSOLUTE_INSTALL_DESTINATION)
+    message(WARNING "ABSOLUTE path INSTALL DESTINATION : ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
+  endif()
+  if(CMAKE_ERROR_ON_ABSOLUTE_INSTALL_DESTINATION)
+    message(FATAL_ERROR "ABSOLUTE path INSTALL DESTINATION forbidden (by caller): ${CMAKE_ABSOLUTE_DESTINATION_FILES}")
+  endif()
+  file(INSTALL DESTINATION "/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/bundle/lib" TYPE FILE FILES "/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop/libdesktop_drop_plugin.so")
 endif()
 
 if(CMAKE_INSTALL_COMPONENT STREQUAL "Runtime" OR NOT CMAKE_INSTALL_COMPONENT)
@@ -158,6 +170,7 @@ if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
   include("/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/flutter/cmake_install.cmake")
   include("/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/runner/cmake_install.cmake")
+  include("/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop/cmake_install.cmake")
   include("/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/flutter_secure_storage_linux/cmake_install.cmake")
 
 endif()

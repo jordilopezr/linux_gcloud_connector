@@ -223,13 +223,13 @@ build /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/ephe
 #############################################
 # Order-only phony target for linux_cloud_connector
 
-build cmake_object_order_depends_target_linux_cloud_connector: phony || cmake_object_order_depends_target_flutter_secure_storage_linux_plugin flutter/flutter_assemble rust_build
+build cmake_object_order_depends_target_linux_cloud_connector: phony || cmake_object_order_depends_target_desktop_drop_plugin cmake_object_order_depends_target_flutter_secure_storage_linux_plugin flutter/flutter_assemble rust_build
 
 build runner/CMakeFiles/linux_cloud_connector.dir/main.cc.o: CXX_COMPILER__linux_cloud_connector_unscanned_Debug /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/runner/main.cc || cmake_object_order_depends_target_linux_cloud_connector
   DEFINES = -DAPPLICATION_ID=\"com.example.linux_cloud_connector\"
   DEP_FILE = runner/CMakeFiles/linux_cloud_connector.dir/main.cc.o.d
   FLAGS = -g -Wall -Werror -pthread
-  INCLUDES = -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux" -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral" -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/include" -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/glib-2.0 -isystem /usr/lib/x86_64-linux-gnu/glib-2.0/include -isystem /usr/include/sysprof-6 -isystem /usr/include/harfbuzz -isystem /usr/include/freetype2 -isystem /usr/include/libpng16 -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/fribidi -isystem /usr/include/cairo -isystem /usr/include/pixman-1 -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/webp -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/cloudproviders -isystem /usr/include/atk-1.0 -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/x86_64-linux-gnu/dbus-1.0/include
+  INCLUDES = -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux" -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral" -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral/.plugin_symlinks/desktop_drop/linux/include" -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/include" -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/glib-2.0 -isystem /usr/lib/x86_64-linux-gnu/glib-2.0/include -isystem /usr/include/sysprof-6 -isystem /usr/include/harfbuzz -isystem /usr/include/freetype2 -isystem /usr/include/libpng16 -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/fribidi -isystem /usr/include/cairo -isystem /usr/include/pixman-1 -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/webp -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/cloudproviders -isystem /usr/include/atk-1.0 -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/x86_64-linux-gnu/dbus-1.0/include
   OBJECT_DIR = runner/CMakeFiles/linux_cloud_connector.dir
   OBJECT_FILE_DIR = runner/CMakeFiles/linux_cloud_connector.dir
 
@@ -237,7 +237,7 @@ build runner/CMakeFiles/linux_cloud_connector.dir/my_application.cc.o: CXX_COMPI
   DEFINES = -DAPPLICATION_ID=\"com.example.linux_cloud_connector\"
   DEP_FILE = runner/CMakeFiles/linux_cloud_connector.dir/my_application.cc.o.d
   FLAGS = -g -Wall -Werror -pthread
-  INCLUDES = -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux" -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral" -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/include" -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/glib-2.0 -isystem /usr/lib/x86_64-linux-gnu/glib-2.0/include -isystem /usr/include/sysprof-6 -isystem /usr/include/harfbuzz -isystem /usr/include/freetype2 -isystem /usr/include/libpng16 -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/fribidi -isystem /usr/include/cairo -isystem /usr/include/pixman-1 -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/webp -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/cloudproviders -isystem /usr/include/atk-1.0 -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/x86_64-linux-gnu/dbus-1.0/include
+  INCLUDES = -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux" -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral" -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral/.plugin_symlinks/desktop_drop/linux/include" -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/include" -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/glib-2.0 -isystem /usr/lib/x86_64-linux-gnu/glib-2.0/include -isystem /usr/include/sysprof-6 -isystem /usr/include/harfbuzz -isystem /usr/include/freetype2 -isystem /usr/include/libpng16 -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/fribidi -isystem /usr/include/cairo -isystem /usr/include/pixman-1 -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/webp -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/cloudproviders -isystem /usr/include/atk-1.0 -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/x86_64-linux-gnu/dbus-1.0/include
   OBJECT_DIR = runner/CMakeFiles/linux_cloud_connector.dir
   OBJECT_FILE_DIR = runner/CMakeFiles/linux_cloud_connector.dir
 
@@ -245,7 +245,7 @@ build runner/CMakeFiles/linux_cloud_connector.dir/__/flutter/generated_plugin_re
   DEFINES = -DAPPLICATION_ID=\"com.example.linux_cloud_connector\"
   DEP_FILE = runner/CMakeFiles/linux_cloud_connector.dir/__/flutter/generated_plugin_registrant.cc.o.d
   FLAGS = -g -Wall -Werror -pthread
-  INCLUDES = -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux" -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral" -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/include" -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/glib-2.0 -isystem /usr/lib/x86_64-linux-gnu/glib-2.0/include -isystem /usr/include/sysprof-6 -isystem /usr/include/harfbuzz -isystem /usr/include/freetype2 -isystem /usr/include/libpng16 -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/fribidi -isystem /usr/include/cairo -isystem /usr/include/pixman-1 -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/webp -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/cloudproviders -isystem /usr/include/atk-1.0 -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/x86_64-linux-gnu/dbus-1.0/include
+  INCLUDES = -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux" -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral" -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral/.plugin_symlinks/desktop_drop/linux/include" -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/include" -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/glib-2.0 -isystem /usr/lib/x86_64-linux-gnu/glib-2.0/include -isystem /usr/include/sysprof-6 -isystem /usr/include/harfbuzz -isystem /usr/include/freetype2 -isystem /usr/include/libpng16 -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/fribidi -isystem /usr/include/cairo -isystem /usr/include/pixman-1 -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/webp -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/cloudproviders -isystem /usr/include/atk-1.0 -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/x86_64-linux-gnu/dbus-1.0/include
   OBJECT_DIR = runner/CMakeFiles/linux_cloud_connector.dir
   OBJECT_FILE_DIR = runner/CMakeFiles/linux_cloud_connector.dir/__/flutter
 
@@ -257,11 +257,11 @@ build runner/CMakeFiles/linux_cloud_connector.dir/__/flutter/generated_plugin_re
 #############################################
 # Link the executable intermediates_do_not_run/linux_cloud_connector
 
-build intermediates_do_not_run/linux_cloud_connector: CXX_EXECUTABLE_LINKER__linux_cloud_connector_Debug runner/CMakeFiles/linux_cloud_connector.dir/main.cc.o runner/CMakeFiles/linux_cloud_connector.dir/my_application.cc.o runner/CMakeFiles/linux_cloud_connector.dir/__/flutter/generated_plugin_registrant.cc.o | plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/ephemeral/libflutter_linux_gtk.so /usr/lib/x86_64-linux-gnu/libgtk-3.so /usr/lib/x86_64-linux-gnu/libgdk-3.so /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/x86_64-linux-gnu/libpangocairo-1.0.so /usr/lib/x86_64-linux-gnu/libpango-1.0.so /usr/lib/x86_64-linux-gnu/libharfbuzz.so /usr/lib/x86_64-linux-gnu/libatk-1.0.so /usr/lib/x86_64-linux-gnu/libcairo-gobject.so /usr/lib/x86_64-linux-gnu/libcairo.so /usr/lib/x86_64-linux-gnu/libgdk_pixbuf-2.0.so /usr/lib/x86_64-linux-gnu/libgio-2.0.so /usr/lib/x86_64-linux-gnu/libgobject-2.0.so /usr/lib/x86_64-linux-gnu/libglib-2.0.so || flutter/flutter_assemble plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so rust_build
+build intermediates_do_not_run/linux_cloud_connector: CXX_EXECUTABLE_LINKER__linux_cloud_connector_Debug runner/CMakeFiles/linux_cloud_connector.dir/main.cc.o runner/CMakeFiles/linux_cloud_connector.dir/my_application.cc.o runner/CMakeFiles/linux_cloud_connector.dir/__/flutter/generated_plugin_registrant.cc.o | plugins/desktop_drop/libdesktop_drop_plugin.so plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/ephemeral/libflutter_linux_gtk.so /usr/lib/x86_64-linux-gnu/libgtk-3.so /usr/lib/x86_64-linux-gnu/libgdk-3.so /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/x86_64-linux-gnu/libpangocairo-1.0.so /usr/lib/x86_64-linux-gnu/libpango-1.0.so /usr/lib/x86_64-linux-gnu/libharfbuzz.so /usr/lib/x86_64-linux-gnu/libatk-1.0.so /usr/lib/x86_64-linux-gnu/libcairo-gobject.so /usr/lib/x86_64-linux-gnu/libcairo.so /usr/lib/x86_64-linux-gnu/libgdk_pixbuf-2.0.so /usr/lib/x86_64-linux-gnu/libgio-2.0.so /usr/lib/x86_64-linux-gnu/libgobject-2.0.so /usr/lib/x86_64-linux-gnu/libglib-2.0.so || flutter/flutter_assemble plugins/desktop_drop/libdesktop_drop_plugin.so plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so rust_build
   DEP_FILE = runner/CMakeFiles/linux_cloud_connector.dir/link.d
   FLAGS = -g
   LINK_FLAGS = -Xlinker --dependency-file=runner/CMakeFiles/linux_cloud_connector.dir/link.d
-  LINK_LIBRARIES = -Wl,-rpath,"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/flutter_secure_storage_linux:/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral:"  plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so  "/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral/libflutter_linux_gtk.so"  /usr/lib/x86_64-linux-gnu/libgtk-3.so  /usr/lib/x86_64-linux-gnu/libgdk-3.so  /usr/lib/x86_64-linux-gnu/libz.so  /usr/lib/x86_64-linux-gnu/libpangocairo-1.0.so  /usr/lib/x86_64-linux-gnu/libpango-1.0.so  /usr/lib/x86_64-linux-gnu/libharfbuzz.so  /usr/lib/x86_64-linux-gnu/libatk-1.0.so  /usr/lib/x86_64-linux-gnu/libcairo-gobject.so  /usr/lib/x86_64-linux-gnu/libcairo.so  /usr/lib/x86_64-linux-gnu/libgdk_pixbuf-2.0.so  /usr/lib/x86_64-linux-gnu/libgio-2.0.so  /usr/lib/x86_64-linux-gnu/libgobject-2.0.so  /usr/lib/x86_64-linux-gnu/libglib-2.0.so
+  LINK_LIBRARIES = -Wl,-rpath,"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop:/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/flutter_secure_storage_linux:/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral:"  plugins/desktop_drop/libdesktop_drop_plugin.so  plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so  "/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral/libflutter_linux_gtk.so"  /usr/lib/x86_64-linux-gnu/libgtk-3.so  /usr/lib/x86_64-linux-gnu/libgdk-3.so  /usr/lib/x86_64-linux-gnu/libz.so  /usr/lib/x86_64-linux-gnu/libpangocairo-1.0.so  /usr/lib/x86_64-linux-gnu/libpango-1.0.so  /usr/lib/x86_64-linux-gnu/libharfbuzz.so  /usr/lib/x86_64-linux-gnu/libatk-1.0.so  /usr/lib/x86_64-linux-gnu/libcairo-gobject.so  /usr/lib/x86_64-linux-gnu/libcairo.so  /usr/lib/x86_64-linux-gnu/libgdk_pixbuf-2.0.so  /usr/lib/x86_64-linux-gnu/libgio-2.0.so  /usr/lib/x86_64-linux-gnu/libgobject-2.0.so  /usr/lib/x86_64-linux-gnu/libglib-2.0.so
   OBJECT_DIR = runner/CMakeFiles/linux_cloud_connector.dir
   POST_BUILD = :
   PRE_LINK = :
@@ -332,6 +332,114 @@ build runner/CMakeFiles/install/strip.util: CUSTOM_COMMAND runner/all
   restat = 1
 
 build runner/install/strip: phony runner/CMakeFiles/install/strip.util
+
+# =============================================================================
+# Write statements declared in CMakeLists.txt:
+# /home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/generated_plugins.cmake
+# =============================================================================
+
+# =============================================================================
+# Object build statements for SHARED_LIBRARY target desktop_drop_plugin
+
+
+#############################################
+# Order-only phony target for desktop_drop_plugin
+
+build cmake_object_order_depends_target_desktop_drop_plugin: phony || flutter/flutter_assemble
+
+build plugins/desktop_drop/CMakeFiles/desktop_drop_plugin.dir/desktop_drop_plugin.cc.o: CXX_COMPILER__desktop_drop_plugin_unscanned_Debug /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/ephemeral/.plugin_symlinks/desktop_drop/linux/desktop_drop_plugin.cc || cmake_object_order_depends_target_desktop_drop_plugin
+  DEFINES = -DFLUTTER_PLUGIN_IMPL -Ddesktop_drop_plugin_EXPORTS
+  DEP_FILE = plugins/desktop_drop/CMakeFiles/desktop_drop_plugin.dir/desktop_drop_plugin.cc.o.d
+  FLAGS = -g -fPIC -fvisibility=hidden -Wall -Werror -pthread
+  INCLUDES = -I"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral" -isystem /usr/include/gtk-3.0 -isystem /usr/include/pango-1.0 -isystem /usr/include/glib-2.0 -isystem /usr/lib/x86_64-linux-gnu/glib-2.0/include -isystem /usr/include/sysprof-6 -isystem /usr/include/harfbuzz -isystem /usr/include/freetype2 -isystem /usr/include/libpng16 -isystem /usr/include/libmount -isystem /usr/include/blkid -isystem /usr/include/fribidi -isystem /usr/include/cairo -isystem /usr/include/pixman-1 -isystem /usr/include/gdk-pixbuf-2.0 -isystem /usr/include/webp -isystem /usr/include/gio-unix-2.0 -isystem /usr/include/cloudproviders -isystem /usr/include/atk-1.0 -isystem /usr/include/at-spi2-atk/2.0 -isystem /usr/include/at-spi-2.0 -isystem /usr/include/dbus-1.0 -isystem /usr/lib/x86_64-linux-gnu/dbus-1.0/include
+  OBJECT_DIR = plugins/desktop_drop/CMakeFiles/desktop_drop_plugin.dir
+  OBJECT_FILE_DIR = plugins/desktop_drop/CMakeFiles/desktop_drop_plugin.dir
+
+
+# =============================================================================
+# Link build statements for SHARED_LIBRARY target desktop_drop_plugin
+
+
+#############################################
+# Link the shared library plugins/desktop_drop/libdesktop_drop_plugin.so
+
+build plugins/desktop_drop/libdesktop_drop_plugin.so: CXX_SHARED_LIBRARY_LINKER__desktop_drop_plugin_Debug plugins/desktop_drop/CMakeFiles/desktop_drop_plugin.dir/desktop_drop_plugin.cc.o | /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/ephemeral/libflutter_linux_gtk.so /usr/lib/x86_64-linux-gnu/libgtk-3.so /usr/lib/x86_64-linux-gnu/libgdk-3.so /usr/lib/x86_64-linux-gnu/libz.so /usr/lib/x86_64-linux-gnu/libpangocairo-1.0.so /usr/lib/x86_64-linux-gnu/libpango-1.0.so /usr/lib/x86_64-linux-gnu/libharfbuzz.so /usr/lib/x86_64-linux-gnu/libatk-1.0.so /usr/lib/x86_64-linux-gnu/libcairo-gobject.so /usr/lib/x86_64-linux-gnu/libcairo.so /usr/lib/x86_64-linux-gnu/libgdk_pixbuf-2.0.so /usr/lib/x86_64-linux-gnu/libgio-2.0.so /usr/lib/x86_64-linux-gnu/libgobject-2.0.so /usr/lib/x86_64-linux-gnu/libglib-2.0.so || flutter/flutter_assemble
+  DEP_FILE = plugins/desktop_drop/CMakeFiles/desktop_drop_plugin.dir/link.d
+  LANGUAGE_COMPILE_FLAGS = -g
+  LINK_FLAGS = -Xlinker --dependency-file=plugins/desktop_drop/CMakeFiles/desktop_drop_plugin.dir/link.d
+  LINK_LIBRARIES = -Wl,-rpath,"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral"  "/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral/libflutter_linux_gtk.so"  /usr/lib/x86_64-linux-gnu/libgtk-3.so  /usr/lib/x86_64-linux-gnu/libgdk-3.so  /usr/lib/x86_64-linux-gnu/libz.so  /usr/lib/x86_64-linux-gnu/libpangocairo-1.0.so  /usr/lib/x86_64-linux-gnu/libpango-1.0.so  /usr/lib/x86_64-linux-gnu/libharfbuzz.so  /usr/lib/x86_64-linux-gnu/libatk-1.0.so  /usr/lib/x86_64-linux-gnu/libcairo-gobject.so  /usr/lib/x86_64-linux-gnu/libcairo.so  /usr/lib/x86_64-linux-gnu/libgdk_pixbuf-2.0.so  /usr/lib/x86_64-linux-gnu/libgio-2.0.so  /usr/lib/x86_64-linux-gnu/libgobject-2.0.so  /usr/lib/x86_64-linux-gnu/libglib-2.0.so
+  OBJECT_DIR = plugins/desktop_drop/CMakeFiles/desktop_drop_plugin.dir
+  POST_BUILD = :
+  PRE_LINK = :
+  SONAME = libdesktop_drop_plugin.so
+  SONAME_FLAG = -Wl,-soname,
+  TARGET_FILE = plugins/desktop_drop/libdesktop_drop_plugin.so
+  TARGET_PDB = desktop_drop_plugin.so.dbg
+
+
+#############################################
+# Utility command for edit_cache
+
+build plugins/desktop_drop/CMakeFiles/edit_cache.util: CUSTOM_COMMAND
+  COMMAND = cd "/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop" && /usr/bin/cmake -E echo No\ interactive\ CMake\ dialog\ available.
+  DESC = No interactive CMake dialog available...
+  restat = 1
+
+build plugins/desktop_drop/edit_cache: phony plugins/desktop_drop/CMakeFiles/edit_cache.util
+
+
+#############################################
+# Utility command for rebuild_cache
+
+build plugins/desktop_drop/CMakeFiles/rebuild_cache.util: CUSTOM_COMMAND
+  COMMAND = cd "/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop" && /usr/bin/cmake --regenerate-during-build -S"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux" -B"/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug"
+  DESC = Running CMake to regenerate build system...
+  pool = console
+  restat = 1
+
+build plugins/desktop_drop/rebuild_cache: phony plugins/desktop_drop/CMakeFiles/rebuild_cache.util
+
+
+#############################################
+# Utility command for list_install_components
+
+build plugins/desktop_drop/list_install_components: phony
+
+
+#############################################
+# Utility command for install
+
+build plugins/desktop_drop/CMakeFiles/install.util: CUSTOM_COMMAND plugins/desktop_drop/all
+  COMMAND = cd "/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop" && /usr/bin/cmake -P cmake_install.cmake
+  DESC = Install the project...
+  pool = console
+  restat = 1
+
+build plugins/desktop_drop/install: phony plugins/desktop_drop/CMakeFiles/install.util
+
+
+#############################################
+# Utility command for install/local
+
+build plugins/desktop_drop/CMakeFiles/install/local.util: CUSTOM_COMMAND plugins/desktop_drop/all
+  COMMAND = cd "/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop" && /usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
+  DESC = Installing only the local directory...
+  pool = console
+  restat = 1
+
+build plugins/desktop_drop/install/local: phony plugins/desktop_drop/CMakeFiles/install/local.util
+
+
+#############################################
+# Utility command for install/strip
+
+build plugins/desktop_drop/CMakeFiles/install/strip.util: CUSTOM_COMMAND plugins/desktop_drop/all
+  COMMAND = cd "/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop" && /usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
+  DESC = Installing the project stripped...
+  pool = console
+  restat = 1
+
+build plugins/desktop_drop/install/strip: phony plugins/desktop_drop/CMakeFiles/install/strip.util
 
 # =============================================================================
 # Write statements declared in CMakeLists.txt:
@@ -444,9 +552,13 @@ build plugins/flutter_secure_storage_linux/install/strip: phony plugins/flutter_
 # =============================================================================
 # Target aliases.
 
+build desktop_drop_plugin: phony plugins/desktop_drop/libdesktop_drop_plugin.so
+
 build flutter_assemble: phony flutter/flutter_assemble
 
 build flutter_secure_storage_linux_plugin: phony plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so
+
+build libdesktop_drop_plugin.so: phony plugins/desktop_drop/libdesktop_drop_plugin.so
 
 build libflutter_secure_storage_linux_plugin.so: phony plugins/flutter_secure_storage_linux/libflutter_secure_storage_linux_plugin.so
 
@@ -460,7 +572,7 @@ build linux_cloud_connector: phony intermediates_do_not_run/linux_cloud_connecto
 #############################################
 # Folder: /home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug
 
-build all: phony rust_build flutter/all runner/all plugins/flutter_secure_storage_linux/all
+build all: phony rust_build flutter/all runner/all plugins/desktop_drop/all plugins/flutter_secure_storage_linux/all
 
 # =============================================================================
 
@@ -468,6 +580,13 @@ build all: phony rust_build flutter/all runner/all plugins/flutter_secure_storag
 # Folder: /home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/flutter
 
 build flutter/all: phony
+
+# =============================================================================
+
+#############################################
+# Folder: /home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop
+
+build plugins/desktop_drop/all: phony plugins/desktop_drop/libdesktop_drop_plugin.so
 
 # =============================================================================
 
@@ -490,14 +609,14 @@ build runner/all: phony intermediates_do_not_run/linux_cloud_connector
 #############################################
 # Re-run CMake if any of its inputs changed.
 
-build build.ninja: RERUN_CMAKE | /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/CMakeLists.txt /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/CMakeLists.txt /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/CMakeLists.txt /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/ephemeral/generated_config.cmake /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/generated_plugins.cmake /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/runner/CMakeLists.txt /usr/share/cmake-3.31/Modules/CMakeCXXInformation.cmake /usr/share/cmake-3.31/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-3.31/Modules/CMakeGenericSystem.cmake /usr/share/cmake-3.31/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-3.31/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-3.31/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-3.31/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-3.31/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-3.31/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake-3.31/Modules/Compiler/Clang.cmake /usr/share/cmake-3.31/Modules/Compiler/GNU.cmake /usr/share/cmake-3.31/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake-3.31/Modules/FindPackageMessage.cmake /usr/share/cmake-3.31/Modules/FindPkgConfig.cmake /usr/share/cmake-3.31/Modules/Internal/CMakeCXXLinkerInformation.cmake /usr/share/cmake-3.31/Modules/Internal/CMakeCommonLinkerInformation.cmake /usr/share/cmake-3.31/Modules/Linker/GNU-CXX.cmake /usr/share/cmake-3.31/Modules/Linker/GNU.cmake /usr/share/cmake-3.31/Modules/Platform/Linker/GNU.cmake /usr/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU-CXX.cmake /usr/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU.cmake /usr/share/cmake-3.31/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake-3.31/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-3.31/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-3.31/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-3.31/Modules/Platform/Linux.cmake /usr/share/cmake-3.31/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.31.6/CMakeCXXCompiler.cmake CMakeFiles/3.31.6/CMakeSystem.cmake
+build build.ninja: RERUN_CMAKE | /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/CMakeLists.txt /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/CMakeLists.txt /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/ephemeral/.plugin_symlinks/desktop_drop/linux/CMakeLists.txt /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/CMakeLists.txt /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/ephemeral/generated_config.cmake /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/generated_plugins.cmake /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/runner/CMakeLists.txt /usr/share/cmake-3.31/Modules/CMakeCXXInformation.cmake /usr/share/cmake-3.31/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-3.31/Modules/CMakeGenericSystem.cmake /usr/share/cmake-3.31/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-3.31/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-3.31/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-3.31/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-3.31/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-3.31/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake-3.31/Modules/Compiler/Clang.cmake /usr/share/cmake-3.31/Modules/Compiler/GNU.cmake /usr/share/cmake-3.31/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake-3.31/Modules/FindPackageMessage.cmake /usr/share/cmake-3.31/Modules/FindPkgConfig.cmake /usr/share/cmake-3.31/Modules/Internal/CMakeCXXLinkerInformation.cmake /usr/share/cmake-3.31/Modules/Internal/CMakeCommonLinkerInformation.cmake /usr/share/cmake-3.31/Modules/Linker/GNU-CXX.cmake /usr/share/cmake-3.31/Modules/Linker/GNU.cmake /usr/share/cmake-3.31/Modules/Platform/Linker/GNU.cmake /usr/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU-CXX.cmake /usr/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU.cmake /usr/share/cmake-3.31/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake-3.31/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-3.31/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-3.31/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-3.31/Modules/Platform/Linux.cmake /usr/share/cmake-3.31/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.31.6/CMakeCXXCompiler.cmake CMakeFiles/3.31.6/CMakeSystem.cmake
   pool = console
 
 
 #############################################
 # A missing CMake input file is not an error.
 
-build /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/CMakeLists.txt /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/CMakeLists.txt /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/CMakeLists.txt /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/ephemeral/generated_config.cmake /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/generated_plugins.cmake /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/runner/CMakeLists.txt /usr/share/cmake-3.31/Modules/CMakeCXXInformation.cmake /usr/share/cmake-3.31/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-3.31/Modules/CMakeGenericSystem.cmake /usr/share/cmake-3.31/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-3.31/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-3.31/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-3.31/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-3.31/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-3.31/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake-3.31/Modules/Compiler/Clang.cmake /usr/share/cmake-3.31/Modules/Compiler/GNU.cmake /usr/share/cmake-3.31/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake-3.31/Modules/FindPackageMessage.cmake /usr/share/cmake-3.31/Modules/FindPkgConfig.cmake /usr/share/cmake-3.31/Modules/Internal/CMakeCXXLinkerInformation.cmake /usr/share/cmake-3.31/Modules/Internal/CMakeCommonLinkerInformation.cmake /usr/share/cmake-3.31/Modules/Linker/GNU-CXX.cmake /usr/share/cmake-3.31/Modules/Linker/GNU.cmake /usr/share/cmake-3.31/Modules/Platform/Linker/GNU.cmake /usr/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU-CXX.cmake /usr/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU.cmake /usr/share/cmake-3.31/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake-3.31/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-3.31/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-3.31/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-3.31/Modules/Platform/Linux.cmake /usr/share/cmake-3.31/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.31.6/CMakeCXXCompiler.cmake CMakeFiles/3.31.6/CMakeSystem.cmake: phony
+build /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/CMakeLists.txt /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/CMakeLists.txt /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/ephemeral/.plugin_symlinks/desktop_drop/linux/CMakeLists.txt /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/ephemeral/.plugin_symlinks/flutter_secure_storage_linux/linux/CMakeLists.txt /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/ephemeral/generated_config.cmake /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/flutter/generated_plugins.cmake /home/jlopezre/Project/IAP$ Linux/linux_cloud_connector/linux/runner/CMakeLists.txt /usr/share/cmake-3.31/Modules/CMakeCXXInformation.cmake /usr/share/cmake-3.31/Modules/CMakeCommonLanguageInclude.cmake /usr/share/cmake-3.31/Modules/CMakeGenericSystem.cmake /usr/share/cmake-3.31/Modules/CMakeInitializeConfigs.cmake /usr/share/cmake-3.31/Modules/CMakeLanguageInformation.cmake /usr/share/cmake-3.31/Modules/CMakeSystemSpecificInformation.cmake /usr/share/cmake-3.31/Modules/CMakeSystemSpecificInitialize.cmake /usr/share/cmake-3.31/Modules/Compiler/CMakeCommonCompilerMacros.cmake /usr/share/cmake-3.31/Modules/Compiler/Clang-CXX.cmake /usr/share/cmake-3.31/Modules/Compiler/Clang.cmake /usr/share/cmake-3.31/Modules/Compiler/GNU.cmake /usr/share/cmake-3.31/Modules/FindPackageHandleStandardArgs.cmake /usr/share/cmake-3.31/Modules/FindPackageMessage.cmake /usr/share/cmake-3.31/Modules/FindPkgConfig.cmake /usr/share/cmake-3.31/Modules/Internal/CMakeCXXLinkerInformation.cmake /usr/share/cmake-3.31/Modules/Internal/CMakeCommonLinkerInformation.cmake /usr/share/cmake-3.31/Modules/Linker/GNU-CXX.cmake /usr/share/cmake-3.31/Modules/Linker/GNU.cmake /usr/share/cmake-3.31/Modules/Platform/Linker/GNU.cmake /usr/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU-CXX.cmake /usr/share/cmake-3.31/Modules/Platform/Linker/Linux-GNU.cmake /usr/share/cmake-3.31/Modules/Platform/Linux-Clang-CXX.cmake /usr/share/cmake-3.31/Modules/Platform/Linux-GNU-CXX.cmake /usr/share/cmake-3.31/Modules/Platform/Linux-GNU.cmake /usr/share/cmake-3.31/Modules/Platform/Linux-Initialize.cmake /usr/share/cmake-3.31/Modules/Platform/Linux.cmake /usr/share/cmake-3.31/Modules/Platform/UnixPaths.cmake CMakeCache.txt CMakeFiles/3.31.6/CMakeCXXCompiler.cmake CMakeFiles/3.31.6/CMakeSystem.cmake: phony
 
 
 #############################################

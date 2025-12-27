@@ -5,15 +5,18 @@
   "packages": [
     {
       "name": "linux_cloud_connector",
-      "version": "1.1.0+1",
+      "version": "1.7.0+7",
       "dependencies": [
         "cupertino_icons",
+        "desktop_drop",
+        "file_picker",
         "flutter",
         "flutter_riverpod",
         "flutter_rust_bridge",
         "flutter_secure_storage",
         "freezed_annotation",
         "json_annotation",
+        "path",
         "riverpod",
         "shared_preferences"
       ],
@@ -141,6 +144,35 @@
         "stream_channel",
         "test_api",
         "vector_math"
+      ]
+    },
+    {
+      "name": "desktop_drop",
+      "version": "0.4.4",
+      "dependencies": [
+        "cross_file",
+        "flutter",
+        "flutter_web_plugins"
+      ]
+    },
+    {
+      "name": "path",
+      "version": "1.9.1",
+      "dependencies": []
+    },
+    {
+      "name": "file_picker",
+      "version": "8.3.7",
+      "dependencies": [
+        "cross_file",
+        "ffi",
+        "flutter",
+        "flutter_plugin_android_lifecycle",
+        "flutter_web_plugins",
+        "path",
+        "plugin_platform_interface",
+        "web",
+        "win32"
       ]
     },
     {
@@ -278,11 +310,6 @@
       "dependencies": [
         "collection"
       ]
-    },
-    {
-      "name": "path",
-      "version": "1.9.1",
-      "dependencies": []
     },
     {
       "name": "meta",
@@ -645,6 +672,47 @@
       ]
     },
     {
+      "name": "flutter_web_plugins",
+      "version": "0.0.0",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "cross_file",
+      "version": "0.3.5+1",
+      "dependencies": [
+        "meta",
+        "web"
+      ]
+    },
+    {
+      "name": "web",
+      "version": "1.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "win32",
+      "version": "5.15.0",
+      "dependencies": [
+        "ffi"
+      ]
+    },
+    {
+      "name": "plugin_platform_interface",
+      "version": "2.1.8",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
+      "name": "flutter_plugin_android_lifecycle",
+      "version": "2.0.33",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
       "name": "flutter_secure_storage_windows",
       "version": "4.1.0",
       "dependencies": [
@@ -788,11 +856,6 @@
       ]
     },
     {
-      "name": "web",
-      "version": "1.1.1",
-      "dependencies": []
-    },
-    {
       "name": "build_cli_annotations",
       "version": "2.1.1",
       "dependencies": [
@@ -912,13 +975,6 @@
       ]
     },
     {
-      "name": "win32",
-      "version": "5.15.0",
-      "dependencies": [
-        "ffi"
-      ]
-    },
-    {
       "name": "path_provider",
       "version": "2.1.5",
       "dependencies": [
@@ -928,20 +984,6 @@
         "path_provider_linux",
         "path_provider_platform_interface",
         "path_provider_windows"
-      ]
-    },
-    {
-      "name": "flutter_web_plugins",
-      "version": "0.0.0",
-      "dependencies": [
-        "flutter"
-      ]
-    },
-    {
-      "name": "plugin_platform_interface",
-      "version": "2.1.8",
-      "dependencies": [
-        "meta"
       ]
     },
     {

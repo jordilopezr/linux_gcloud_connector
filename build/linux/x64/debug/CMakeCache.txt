@@ -200,6 +200,15 @@ PKG_CONFIG_ARGN:STRING=
 PKG_CONFIG_EXECUTABLE:FILEPATH=/usr/bin/pkg-config
 
 //Value Computed by CMake
+desktop_drop_BINARY_DIR:STATIC=/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/desktop_drop
+
+//Value Computed by CMake
+desktop_drop_IS_TOP_LEVEL:STATIC=OFF
+
+//Value Computed by CMake
+desktop_drop_SOURCE_DIR:STATIC=/home/jlopezre/Project/IAP Linux/linux_cloud_connector/linux/flutter/ephemeral/.plugin_symlinks/desktop_drop/linux
+
+//Value Computed by CMake
 flutter_secure_storage_linux_BINARY_DIR:STATIC=/home/jlopezre/Project/IAP Linux/linux_cloud_connector/build/linux/x64/debug/plugins/flutter_secure_storage_linux
 
 //Value Computed by CMake
@@ -371,7 +380,7 @@ CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_NM
 CMAKE_NM-ADVANCED:INTERNAL=1
 //number of local generators
-CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=4
+CMAKE_NUMBER_OF_MAKEFILES:INTERNAL=5
 //ADVANCED property for variable: CMAKE_OBJCOPY
 CMAKE_OBJCOPY-ADVANCED:INTERNAL=1
 //ADVANCED property for variable: CMAKE_OBJDUMP
