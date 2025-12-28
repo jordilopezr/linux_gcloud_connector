@@ -1429,6 +1429,7 @@ class InstanceDetailPane extends ConsumerWidget {
                         fullscreen: fullscreen,
                         width: fullscreen ? null : width,
                         height: fullscreen ? null : height,
+                        ignoreCertificate: false, // Secure by default
                       ));
                     }
                   },

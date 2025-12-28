@@ -20,6 +20,14 @@ lazy_static! {
     static ref INSTANCE_NAME_REGEX: Regex = Regex::new(
         r"^[a-z]([a-z0-9-]{0,61}[a-z0-9])?$"
     ).unwrap();
+
+    // Linux Username: Standard POSIX username format
+    // Must start with lowercase letter or underscore
+    // Can contain lowercase letters, digits, underscores, hyphens
+    // 1-32 characters long
+    static ref USERNAME_REGEX: Regex = Regex::new(
+        r"^[a-z_][a-z0-9_-]{0,31}$"
+    ).unwrap();
 }
 
 /// Validates a GCP project ID
@@ -112,6 +120,46 @@ pub fn validate_instance_name(instance_name: &str) -> Result<()> {
             "Invalid instance name '{}'. Must start with lowercase letter, \
              contain only lowercase letters/digits/hyphens, and end with letter or digit",
             instance_name
+        ));
+    }
+
+    Ok(())
+}
+
+/// Validates a Linux username for SFTP operations
+///
+/// # Rules
+/// - 1-32 characters long
+/// - Must start with a lowercase letter or underscore
+/// - Can contain lowercase letters, digits, underscores, and hyphens
+/// - Follows POSIX username standards
+///
+/// # Examples
+/// ```
+/// assert!(validate_username("jlopezre").is_ok());
+/// assert!(validate_username("_service").is_ok());
+/// assert!(validate_username("user-name_01").is_ok());
+/// assert!(validate_username("../root").is_err()); // path traversal attempt
+/// assert!(validate_username("User").is_err()); // uppercase not allowed
+/// ```
+pub fn validate_username(username: &str) -> Result<()> {
+    if username.is_empty() {
+        return Err(anyhow!("Username cannot be empty"));
+    }
+
+    if username.len() > 32 {
+        return Err(anyhow!(
+            "Username '{}' too long ({} chars). Maximum is 32 characters",
+            username,
+            username.len()
+        ));
+    }
+
+    if !USERNAME_REGEX.is_match(username) {
+        return Err(anyhow!(
+            "Invalid username '{}'. Must start with lowercase letter or underscore, \
+             contain only lowercase letters/digits/underscores/hyphens, max 32 chars",
+            username
         ));
     }
 
@@ -237,6 +285,43 @@ mod tests {
     }
 
     #[test]
+    fn test_valid_usernames() {
+        assert!(validate_username("jlopezre").is_ok());
+        assert!(validate_username("_service").is_ok());
+        assert!(validate_username("user01").is_ok());
+        assert!(validate_username("user-name_01").is_ok());
+        assert!(validate_username("a").is_ok());
+    }
+
+    #[test]
+    fn test_invalid_usernames() {
+        // Uppercase
+        assert!(validate_username("User").is_err());
+        assert!(validate_username("ROOT").is_err());
+
+        // Starts with number
+        assert!(validate_username("1user").is_err());
+
+        // Starts with hyphen
+        assert!(validate_username("-user").is_err());
+
+        // Path traversal attempts
+        assert!(validate_username("../root").is_err());
+        assert!(validate_username("..").is_err());
+
+        // Contains invalid characters
+        assert!(validate_username("user@host").is_err());
+        assert!(validate_username("user.name").is_err());
+        assert!(validate_username("user/admin").is_err());
+
+        // Empty
+        assert!(validate_username("").is_err());
+
+        // Too long (33 chars)
+        assert!(validate_username("a12345678901234567890123456789012").is_err());
+    }
+
+    #[test]
     fn test_command_injection_attempts() {
         // These should all be rejected
         assert!(validate_instance_name("vm; rm -rf /").is_err());
@@ -246,5 +331,7 @@ mod tests {
         assert!(validate_instance_name("vm$(whoami)").is_err());
         assert!(validate_project_id("project; drop table users").is_err());
         assert!(validate_zone("us-central1-a; ls -la").is_err());
+        assert!(validate_username("user; rm -rf /").is_err());
+        assert!(validate_username("user`whoami`").is_err());
     }
 }

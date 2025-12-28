@@ -1,7 +1,7 @@
 [package]
 name = "native"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "lib"]
@@ -24,5 +24,4 @@ tracing-appender = "0.2.3"
 # Google Cloud Client Libraries - PoC
 google-cloud-auth = "0.17"
 google-cloud-googleapis = "0.14"
-gcp-bigquery-client = "0.22"  # Includes common auth utilities
 reqwest = { version = "0.12", features = ["json"] }

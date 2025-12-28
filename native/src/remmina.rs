@@ -7,7 +7,7 @@ use tracing;
 #[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 
-#[derive(Default, Debug)]
+#[derive(Debug)]
 pub struct RdpSettings {
     pub username: Option<String>,
     pub password: Option<String>,
@@ -15,6 +15,25 @@ pub struct RdpSettings {
     pub width: Option<u32>,
     pub height: Option<u32>,
     pub fullscreen: bool,
+    /// Whether to ignore certificate validation errors
+    /// Default: false (validate certificates for security)
+    /// Set to true only if connecting to trusted hosts with self-signed certs
+    pub ignore_certificate: bool,
+}
+
+impl Default for RdpSettings {
+    fn default() -> Self {
+        Self {
+            username: None,
+            password: None,
+            domain: None,
+            width: None,
+            height: None,
+            fullscreen: false,
+            // SECURITY: Default to validating certificates
+            ignore_certificate: false,
+        }
+    }
 }
 
 pub fn launch_remmina(port: u16, instance_name: &str, settings: RdpSettings) -> Result<()> {
@@ -37,14 +56,16 @@ pub fn launch_remmina(port: u16, instance_name: &str, settings: RdpSettings) -> 
         let mut file_path = config_dir.clone();
         file_path.push(format!("iap_{}.remmina", instance_name));
         
+        let ignore_cert = if settings.ignore_certificate { "1" } else { "0" };
+
         let mut content = format!(r#"
 [remmina]
 name={} (IAP)
 protocol=RDP
 server=127.0.0.1:{}
-ignore-certificate=1
+ignore-certificate={}
 enable-autostart=1
-"#, instance_name, port);
+"#, instance_name, port, ignore_cert);
 
         if let Some(u) = &settings.username { content.push_str(&format!("username={}\n", u)); }
         if let Some(p) = &settings.password { content.push_str(&format!("password={}\n", p)); }
@@ -62,8 +83,8 @@ enable-autostart=1
              }
         }
 
-        if let Ok(mut file) = File::create(&file_path)
-            && file.write_all(content.as_bytes()).is_ok() {
+        if let Ok(mut file) = File::create(&file_path) {
+            if file.write_all(content.as_bytes()).is_ok() {
                 // SECURITY: Set file permissions to 0600 (owner read/write only)
                 // This prevents other users from reading RDP credentials
                 #[cfg(unix)]
@@ -81,6 +102,7 @@ enable-autostart=1
 
                 config_path_opt = Some(file_path);
             }
+        }
     }
 
     // 1. Try Native

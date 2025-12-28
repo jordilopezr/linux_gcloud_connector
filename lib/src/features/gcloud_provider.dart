@@ -379,7 +379,7 @@ class ConnectionsNotifier extends Notifier<Map<String, TunnelState>> {
           await launchRdp(
             port: activeTunnel!.port!,
             instanceName: instanceName,
-            settings: settings ?? const RdpSettings(fullscreen: false)
+            settings: settings ?? const RdpSettings(fullscreen: false, ignoreCertificate: false)
           );
         } catch (e) {
            // Connection is still good, just launch failed

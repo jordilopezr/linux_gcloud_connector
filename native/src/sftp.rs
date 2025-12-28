@@ -76,13 +76,17 @@ fn copy_with_limit<R: Read, W: Write>(
 /// Validate and normalize remote path to prevent path traversal attacks
 ///
 /// This function ensures that:
-/// 1. The path does not contain ".." components (parent directory references)
-/// 2. The resolved path stays within the user's home directory
-/// 3. The path is properly normalized
+/// 1. The username is valid (POSIX format)
+/// 2. The path does not contain ".." components (parent directory references)
+/// 3. The resolved path stays within the user's home directory
+/// 4. The path is properly normalized
 ///
 /// # Security
 /// This is a critical security function that prevents CWE-22 (Path Traversal) attacks
 fn validate_and_normalize_path(remote_path: &str, username: &str) -> Result<PathBuf> {
+    // SECURITY: Validate username first to prevent path injection
+    crate::validation::validate_username(username)?;
+
     let path = Path::new(remote_path);
 
     // Security check: Reject paths with parent directory components
@@ -148,6 +152,72 @@ fn validate_and_normalize_path(remote_path: &str, username: &str) -> Result<Path
         original_path = remote_path,
         normalized_path = %normalized.display(),
         "Path validated successfully"
+    );
+
+    Ok(normalized)
+}
+
+/// Validate local file path for downloads/uploads
+///
+/// This function ensures that:
+/// 1. The path does not contain ".." components (parent directory traversal)
+/// 2. The path is within allowed directories (user's home)
+/// 3. The path is properly normalized
+///
+/// # Security
+/// Prevents writing to arbitrary system locations (CWE-22)
+fn validate_local_path(local_path: &str) -> Result<PathBuf> {
+    let path = Path::new(local_path);
+
+    // Security check: Reject paths with parent directory components
+    if path.components().any(|c| matches!(c, std::path::Component::ParentDir)) {
+        tracing::warn!(
+            local_path = local_path,
+            "Local path traversal attempt detected"
+        );
+        return Err(anyhow!("Local path traversal not allowed (.. components forbidden)"));
+    }
+
+    // Get user's home directory
+    let home_dir = dirs::home_dir()
+        .ok_or_else(|| anyhow!("Could not determine home directory"))?;
+
+    // Resolve to full path
+    let full_path = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        home_dir.join(path)
+    };
+
+    // Canonicalize to resolve any symlinks and normalize
+    let normalized = full_path.canonicalize()
+        .or_else(|_| {
+            // If path doesn't exist yet, validate parent directory
+            if let Some(parent) = full_path.parent() {
+                parent.canonicalize().map(|p| p.join(full_path.file_name().unwrap()))
+            } else {
+                Err(std::io::Error::new(std::io::ErrorKind::NotFound, "Invalid local path"))
+            }
+        })
+        .map_err(|e| anyhow!("Failed to validate local path: {}", e))?;
+
+    // Verify path is within user's home directory
+    if !normalized.starts_with(&home_dir) {
+        tracing::warn!(
+            normalized_path = %normalized.display(),
+            home_dir = %home_dir.display(),
+            "Access denied: local path outside home directory"
+        );
+        return Err(anyhow!(
+            "Access denied: local path must be within your home directory ({})",
+            home_dir.display()
+        ));
+    }
+
+    tracing::debug!(
+        original_path = local_path,
+        normalized_path = %normalized.display(),
+        "Local path validated successfully"
     );
 
     Ok(normalized)
@@ -303,12 +373,15 @@ pub fn sftp_download_file(
     remote_path: String,
     local_path: String,
 ) -> Result<u64> {
-    // Security: Validate and normalize path to prevent traversal attacks
-    let validated_path = validate_and_normalize_path(&remote_path, &username)?;
+    // Security: Validate and normalize remote path to prevent traversal attacks
+    let validated_remote_path = validate_and_normalize_path(&remote_path, &username)?;
+
+    // Security: Validate local path to prevent writing to arbitrary locations
+    let validated_local_path = validate_local_path(&local_path)?;
 
     tracing::info!(
-        remote_path = %validated_path.display(),
-        local_path = local_path,
+        remote_path = %validated_remote_path.display(),
+        local_path = %validated_local_path.display(),
         "Downloading file via SFTP"
     );
 
@@ -317,12 +390,12 @@ pub fn sftp_download_file(
         .map_err(|e| anyhow!("Failed to create SFTP session: {}", e))?;
 
     // Open remote file
-    let mut remote_file = sftp.open(&validated_path)
-        .map_err(|e| anyhow!("Failed to open remote file '{}': {}", validated_path.display(), e))?;
+    let mut remote_file = sftp.open(&validated_remote_path)
+        .map_err(|e| anyhow!("Failed to open remote file '{}': {}", validated_remote_path.display(), e))?;
 
     // Create local file
-    let mut local_file = std::fs::File::create(&local_path)
-        .map_err(|e| anyhow!("Failed to create local file '{}': {}", local_path, e))?;
+    let mut local_file = std::fs::File::create(&validated_local_path)
+        .map_err(|e| anyhow!("Failed to create local file '{}': {}", validated_local_path.display(), e))?;
 
     // Copy data with size limit to prevent DoS
     let bytes_copied = copy_with_limit(&mut remote_file, &mut local_file, MAX_FILE_SIZE)?;
@@ -339,12 +412,15 @@ pub fn sftp_upload_file(
     local_path: String,
     remote_path: String,
 ) -> Result<u64> {
-    // Security: Validate and normalize path to prevent traversal attacks
-    let validated_path = validate_and_normalize_path(&remote_path, &username)?;
+    // Security: Validate local path to prevent reading from arbitrary locations
+    let validated_local_path = validate_local_path(&local_path)?;
+
+    // Security: Validate and normalize remote path to prevent traversal attacks
+    let validated_remote_path = validate_and_normalize_path(&remote_path, &username)?;
 
     tracing::info!(
-        local_path = local_path,
-        remote_path = %validated_path.display(),
+        local_path = %validated_local_path.display(),
+        remote_path = %validated_remote_path.display(),
         "Uploading file via SFTP"
     );
 
@@ -353,12 +429,12 @@ pub fn sftp_upload_file(
         .map_err(|e| anyhow!("Failed to create SFTP session: {}", e))?;
 
     // Open local file
-    let mut local_file = std::fs::File::open(&local_path)
-        .map_err(|e| anyhow!("Failed to open local file '{}': {}", local_path, e))?;
+    let mut local_file = std::fs::File::open(&validated_local_path)
+        .map_err(|e| anyhow!("Failed to open local file '{}': {}", validated_local_path.display(), e))?;
 
     // Create remote file
-    let mut remote_file = sftp.create(&validated_path)
-        .map_err(|e| anyhow!("Failed to create remote file '{}': {}", validated_path.display(), e))?;
+    let mut remote_file = sftp.create(&validated_remote_path)
+        .map_err(|e| anyhow!("Failed to create remote file '{}': {}", validated_remote_path.display(), e))?;
 
     // Copy data with size limit to prevent DoS
     let bytes_copied = copy_with_limit(&mut local_file, &mut remote_file, MAX_FILE_SIZE)?;

@@ -100,7 +100,9 @@ impl GcpAuthClient {
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(anyhow!("Token exchange failed: {}", error_text));
+            // SECURITY: Log full error for debugging but return sanitized error to user
+            debug!("Token exchange failed with error: {}", error_text);
+            return Err(anyhow!("Authentication failed. Please try logging in again with: gcloud auth application-default login"));
         }
 
         let token_response: serde_json::Value = response.json().await?;
@@ -316,18 +318,12 @@ pub async fn test_authentication_async() -> Result<String> {
         return Err(anyhow!("Received empty access token"));
     }
 
-    let message = format!(
-        "✅ Authentication successful!\n\
+    let message = "✅ Authentication successful!\n\
          \n\
-         Token length: {} characters\n\
-         Token prefix: {}...\n\
-         \n\
-         You are now authenticated with Google Cloud!",
-        token.len(),
-        &token[..token.len().min(20)]
-    );
+         You are now authenticated with Google Cloud!".to_string();
 
     info!("{}", message);
+    debug!("Token received, length: {} characters", token.len());
     Ok(message)
 }
 

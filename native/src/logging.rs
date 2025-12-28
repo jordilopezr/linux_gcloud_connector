@@ -1,6 +1,7 @@
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::PathBuf;
+use std::sync::OnceLock;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_appender::rolling::{RollingFileAppender, Rotation};
 use tracing_subscriber::{fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
@@ -13,7 +14,8 @@ const MAX_LOG_FILES: usize = 5;
 
 /// Guard that keeps the non-blocking logger alive
 /// Must be stored somewhere that lives for the duration of the program
-static mut LOGGER_GUARD: Option<WorkerGuard> = None;
+/// Using OnceLock for thread-safe initialization without unsafe code
+static LOGGER_GUARD: OnceLock<WorkerGuard> = OnceLock::new();
 
 /// Initialize the structured logging system
 ///
@@ -45,9 +47,8 @@ pub fn init_logging() -> Result<()> {
     let (non_blocking, guard) = tracing_appender::non_blocking(file_appender);
 
     // Store guard in static to prevent logger from being dropped
-    unsafe {
-        LOGGER_GUARD = Some(guard);
-    }
+    // Using OnceLock for thread-safe initialization
+    let _ = LOGGER_GUARD.set(guard);
 
     // Configure log filter
     // Default: INFO level
