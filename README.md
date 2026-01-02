@@ -4,7 +4,7 @@
 
 Desarrollada por **Jordi Lopez Reyes** con **Flutter** y **Rust** para un rendimiento y seguridad óptimos.
 
-![Status](https://img.shields.io/badge/Status-Stable%20v1.8.0-brightgreen)
+![Status](https://img.shields.io/badge/Status-Stable%20v1.9.0-brightgreen)
 ![Platform](https://img.shields.io/badge/Platform-Linux-blue)
 ![License](https://img.shields.io/badge/License-MIT-purple)
 ![Security](https://img.shields.io/badge/Security-Hardened-success)
@@ -12,13 +12,28 @@ Desarrollada por **Jordi Lopez Reyes** con **Flutter** y **Rust** para un rendim
 ![Metrics](https://img.shields.io/badge/Instance%20Metrics-Enabled-orange)
 ![SFTP](https://img.shields.io/badge/SFTP-Enabled-green)
 ![API](https://img.shields.io/badge/Client%20Libraries-Integrated-blue)
-![Auto-Refresh](https://img.shields.io/badge/Auto--Refresh-Enabled-green)
+![Notifications](https://img.shields.io/badge/Notifications-Enabled-yellow)
 
 <img width="1024" height="768" alt="image" src="https://github.com/user-attachments/assets/b510f43b-2a42-462b-9a4e-bfe8618068a5" />
 
 ## ✨ Características Clave
 
-### ⚡ Google Cloud Client Libraries Integration (v1.8.0) - NUEVO
+### 🔔 Sistema de Notificaciones Desktop (v1.9.0) - NUEVO
+*   **📬 Notificaciones Nativas:** Notificaciones desktop de Linux para eventos importantes
+*   **🔄 Cambios de Estado VM:** Alertas automáticas cuando VMs cambian de RUNNING ↔ STOPPED
+*   **⚠️ Alertas de Túneles IAP:** Notificación inmediata cuando un túnel se cae inesperadamente
+*   **✅ Lifecycle Operations:** Notificaciones de éxito/fallo en start/stop/reset
+*   **⚙️ Configuración Flexible:** Habilitar/deshabilitar notificaciones desde Settings
+*   **🎨 Iconos y Acciones:** Notificaciones con iconos contextuales y acciones rápidas
+
+### ⚙️ Configuración Personalizable (v1.9.0) - NUEVO
+*   **🎛️ Settings Dialog:** Panel de configuración completo y organizado
+*   **⏱️ Intervalos de Auto-Refresh:** 10s, 30s, 60s, 120s, 300s, o personalizado (5-600s)
+*   **🔕 Control de Notificaciones:** Activar/desactivar notificaciones desktop
+*   **💾 Persistencia:** Todas las configuraciones se guardan entre sesiones
+*   **🎯 UI Intuitiva:** Interfaz clara con explicaciones y validación en tiempo real
+
+### ⚡ Google Cloud Client Libraries Integration (v1.8.0)
 *   **🚀 Dual API Support:** Alterna entre gcloud CLI y Google Cloud Client Libraries (REST API)
 *   **📊 Performance Boost:** Client Libraries son 1.3-1.5x más rápidas que CLI (sin overhead de procesos)
 *   **🔄 Smart Switching:** Toggle en AppBar para cambiar entre métodos en tiempo real
@@ -106,6 +121,22 @@ Desarrollada por **Jordi Lopez Reyes** con **Flutter** y **Rust** para un rendim
 *   **Desarrollador:** Jordi Lopez Reyes
 *   **Email:** [aim@jordilopezr.com](mailto:aim@jordilopezr.com)
 
+## ☕ Apoya el Desarrollo
+
+Si encuentras útil esta herramienta y quieres apoyar su desarrollo continuo, considera invitarme un café:
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support%20Development-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/jordimlopezr)
+
+**🌟 [buymeacoffee.com/jordimlopezr](https://buymeacoffee.com/jordimlopezr)**
+
+Tu apoyo ayuda a:
+- ✨ Desarrollar nuevas características
+- 🐛 Corregir bugs y mejorar la estabilidad
+- 📚 Mantener la documentación actualizada
+- 🚀 Mejorar el rendimiento y la experiencia de usuario
+
+¡Cualquier contribución es muy apreciada! 💙
+
 ## 🛠️ Requisitos del Sistema
 
 1.  **Google Cloud SDK (`gcloud`):** Instalado y en el PATH.
@@ -162,13 +193,23 @@ gcloud auth application-default login
 
 ## 🎯 Roadmap
 
-### v1.9.0 (Planeado)
-- [ ] Benchmarks para lifecycle operations en Testing Suite
-- [ ] Soporte para más operaciones de Compute Engine (resize, attach disk)
-- [ ] Configuración de intervalos de auto-refresh personalizables
-- [ ] Notificaciones desktop para cambios de estado de VMs
+### v2.0.0 (Planeado)
+- [ ] Historial de conexiones recientes
+- [ ] Modo oscuro (Dark Mode)
+- [ ] Búsqueda avanzada y filtros múltiples
+- [ ] Dashboard de métricas de Cloud Monitoring API
+- [ ] Soporte para múltiples cuentas GCP
+- [ ] Operaciones adicionales de Compute Engine (resize, attach disk, snapshots)
 
-### v1.8.0 (Actual) ✅
+### v1.9.0 (Actual) ✅
+- [x] Sistema de notificaciones desktop
+- [x] Configuración personalizable de auto-refresh
+- [x] Settings dialog con preferencias persistentes
+- [x] Notificaciones de cambios de estado de VMs
+- [x] Notificaciones de túneles IAP caídos
+- [x] Notificaciones de lifecycle operations
+
+### v1.8.0 ✅
 - [x] Google Cloud Client Libraries integration
 - [x] API method toggle (CLI vs Client Libraries)
 - [x] Auto-refresh inteligente con detección de cambios
@@ -190,6 +231,16 @@ Las contribuciones son bienvenidas! Por favor:
 5. Abre un Pull Request
 
 ## 📝 Changelog
+
+### v1.9.0 (2026-01-02)
+- 🔔 Sistema de notificaciones desktop para eventos de VMs y túneles
+- ⚙️ Configuración personalizable de intervalos de auto-refresh (10s-600s)
+- 🎛️ Settings dialog completo con preferencias persistentes
+- 📬 Notificaciones de cambios de estado (RUNNING ↔ STOPPED)
+- ⚠️ Alertas automáticas de túneles IAP caídos
+- ✅ Notificaciones de lifecycle operations (start/stop/reset)
+- 💾 Persistencia de todas las configuraciones del usuario
+- 🎨 UI mejorada con validación en tiempo real
 
 ### v1.8.0 (2025-12-27)
 - ✨ Google Cloud Client Libraries integration con dual API support

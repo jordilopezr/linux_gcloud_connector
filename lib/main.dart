@@ -8,7 +8,9 @@ import 'src/bridge/api.dart/frb_generated.dart';
 import 'src/features/gcloud_provider.dart';
 import 'src/features/sftp_browser.dart';
 import 'src/features/client_lib_test_screen.dart';
+import 'src/features/settings_dialog.dart';
 import 'src/services/storage_service.dart';
+import 'src/services/notification_service.dart';
 
 // Temporary workaround: Use GcpProjectClientLib as GcpProject until FRB generates both types
 typedef GcpProject = GcpProjectClientLib;
@@ -42,6 +44,15 @@ Future<void> main() async {
   } catch (e) {
     debugPrint('⚠️  Failed to initialize logging: $e');
     // Continue anyway - logging is not critical for app functionality
+  }
+
+  // Initialize notification service
+  try {
+    await NotificationService().initialize();
+    debugPrint('✓ Notification service initialized');
+  } catch (e) {
+    debugPrint('⚠️  Failed to initialize notifications: $e');
+    // Continue anyway - notifications are not critical for app functionality
   }
 
   runApp(const ProviderScope(child: MyApp()));
@@ -127,6 +138,11 @@ class DashboardScreen extends ConsumerWidget {
             icon: const Icon(Icons.file_download),
             tooltip: 'Export Logs',
             onPressed: () => _exportLogs(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Settings',
+            onPressed: () => showSettingsDialog(context),
           ),
           IconButton(
             icon: const Icon(Icons.info_outline),
@@ -414,8 +430,8 @@ class DashboardScreen extends ConsumerWidget {
     showAboutDialog(
       context: context,
       applicationName: 'Linux Cloud Connector',
-      applicationVersion: '1.8.0',
-      applicationLegalese: '© 2025 Jordi Lopez Reyes',
+      applicationVersion: '1.9.0',
+      applicationLegalese: '© 2026 Jordi Lopez Reyes',
       applicationIcon: const Icon(Icons.cloud_circle, size: 48, color: Colors.blueAccent),
       children: [
         const SizedBox(height: 20),
@@ -425,14 +441,14 @@ class DashboardScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 20),
 
-        const Text("🆕 What's New in v1.8.0:", style: TextStyle(fontWeight: FontWeight.bold)),
+        const Text("🆕 What's New in v1.9.0:", style: TextStyle(fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        const Text("• ⚡ Google Cloud Client Libraries (1.3-1.5x faster)"),
-        const Text("• 🔄 Auto-Refresh with state change detection"),
-        const Text("• 🖥️ VM Lifecycle Management (start/stop/reset)"),
-        const Text("• 🧪 Enhanced Testing Suite (3 tabs)"),
-        const Text("• 📊 Improved CPU/RAM parsing (all machine types)"),
-        const Text("• 💾 Persistent API method preferences"),
+        const Text("• 🔔 Desktop Notifications for VM state changes"),
+        const Text("• ⚙️ Configurable Auto-Refresh intervals (10s-600s)"),
+        const Text("• 🎛️ Settings Dialog with persistent preferences"),
+        const Text("• ⚠️ IAP Tunnel failure alerts"),
+        const Text("• ✅ Lifecycle operations notifications"),
+        const Text("• 💾 All settings persist across sessions"),
 
         const SizedBox(height: 20),
         const Text("Core Features:", style: TextStyle(fontWeight: FontWeight.bold)),
@@ -444,6 +460,7 @@ class DashboardScreen extends ConsumerWidget {
         const Text("• 📁 SFTP File Transfer Browser"),
         const Text("• 🔌 Generic Port Forwarding (unlimited tunnels)"),
         const Text("• 📊 Instance Resource Metrics (CPU/RAM/Disk)"),
+        const Text("• ⚡ Dual API Support (CLI & Client Libraries)"),
         const Text("• 📝 Structured Logging & Monitoring"),
         const Text("• 🔑 Secure Credential Storage (libsecret)"),
 
@@ -465,6 +482,17 @@ class DashboardScreen extends ConsumerWidget {
         const SelectableText(
           "https://github.com/jordilopezr/linux_gcloud_connector",
           style: TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+        ),
+        const SizedBox(height: 15),
+        const Text("☕ Support Development:", style: TextStyle(fontWeight: FontWeight.bold)),
+        const SelectableText(
+          "https://buymeacoffee.com/jordimlopezr",
+          style: TextStyle(color: Colors.orange, decoration: TextDecoration.underline, fontSize: 13),
+        ),
+        const SizedBox(height: 5),
+        const Text(
+          "If you find this tool useful, consider buying me a coffee!",
+          style: TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey),
         ),
         const SizedBox(height: 15),
         const Text("Tech Stack:", style: TextStyle(fontWeight: FontWeight.bold)),
