@@ -216,6 +216,26 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
                 subtitle: Text('Version 1.9.0\n© 2026 Jordi Lopez Reyes'),
                 isThreeLine: true,
               ),
+              const Divider(height: 32),
+
+              // ===== SUPPORT SECTION =====
+              const Text(
+                '☕ Support Development',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const ListTile(
+                leading: Icon(Icons.favorite, color: Colors.orange),
+                title: Text('Buy Me a Coffee'),
+                subtitle: SelectableText(
+                  'buymeacoffee.com/jordimlopezr\n\nIf you find this tool useful, consider supporting its development!',
+                  style: TextStyle(fontSize: 12),
+                ),
+                isThreeLine: true,
+              ),
             ],
           ),
         ),

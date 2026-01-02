@@ -121,6 +121,22 @@ Desarrollada por **Jordi Lopez Reyes** con **Flutter** y **Rust** para un rendim
 *   **Desarrollador:** Jordi Lopez Reyes
 *   **Email:** [aim@jordilopezr.com](mailto:aim@jordilopezr.com)
 
+## ☕ Apoya el Desarrollo
+
+Si encuentras útil esta herramienta y quieres apoyar su desarrollo continuo, considera invitarme un café:
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support%20Development-orange?style=for-the-badge&logo=buy-me-a-coffee)](https://buymeacoffee.com/jordimlopezr)
+
+**🌟 [buymeacoffee.com/jordimlopezr](https://buymeacoffee.com/jordimlopezr)**
+
+Tu apoyo ayuda a:
+- ✨ Desarrollar nuevas características
+- 🐛 Corregir bugs y mejorar la estabilidad
+- 📚 Mantener la documentación actualizada
+- 🚀 Mejorar el rendimiento y la experiencia de usuario
+
+¡Cualquier contribución es muy apreciada! 💙
+
 ## 🛠️ Requisitos del Sistema
 
 1.  **Google Cloud SDK (`gcloud`):** Instalado y en el PATH.
