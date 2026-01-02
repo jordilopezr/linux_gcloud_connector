@@ -8,7 +8,9 @@ import 'src/bridge/api.dart/frb_generated.dart';
 import 'src/features/gcloud_provider.dart';
 import 'src/features/sftp_browser.dart';
 import 'src/features/client_lib_test_screen.dart';
+import 'src/features/settings_dialog.dart';
 import 'src/services/storage_service.dart';
+import 'src/services/notification_service.dart';
 
 // Temporary workaround: Use GcpProjectClientLib as GcpProject until FRB generates both types
 typedef GcpProject = GcpProjectClientLib;
@@ -42,6 +44,15 @@ Future<void> main() async {
   } catch (e) {
     debugPrint('⚠️  Failed to initialize logging: $e');
     // Continue anyway - logging is not critical for app functionality
+  }
+
+  // Initialize notification service
+  try {
+    await NotificationService().initialize();
+    debugPrint('✓ Notification service initialized');
+  } catch (e) {
+    debugPrint('⚠️  Failed to initialize notifications: $e');
+    // Continue anyway - notifications are not critical for app functionality
   }
 
   runApp(const ProviderScope(child: MyApp()));
@@ -127,6 +138,11 @@ class DashboardScreen extends ConsumerWidget {
             icon: const Icon(Icons.file_download),
             tooltip: 'Export Logs',
             onPressed: () => _exportLogs(context),
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings),
+            tooltip: 'Settings',
+            onPressed: () => showSettingsDialog(context),
           ),
           IconButton(
             icon: const Icon(Icons.info_outline),

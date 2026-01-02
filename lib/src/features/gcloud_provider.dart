@@ -6,6 +6,8 @@ import '../bridge/api.dart/gcloud.dart';
 import '../bridge/api.dart/gcloud_client_poc.dart';
 import '../bridge/api.dart/remmina.dart';
 import '../services/storage_service.dart';
+import '../services/notification_service.dart';
+import 'settings_provider.dart';
 
 // ==========================================
 // GOOGLE CLOUD CLIENT LIBRARIES PROVIDERS
@@ -226,6 +228,18 @@ class ConnectionsNotifier extends Notifier<Map<String, TunnelState>> {
             // Tunnel died! Update state to error
             debugPrint('⚠️ HEALTH CHECK FAILED: Tunnel for $instanceName is unhealthy (process dead or port not listening)');
 
+            // Send notification about tunnel failure
+            final parsed = parseTunnelKey(instanceName);
+            if (parsed != null) {
+              final selectedProject = ref.read(selectedProjectProvider);
+              NotificationService().notifyTunnelFailed(
+                instanceName: parsed.$1,
+                remotePort: parsed.$2,
+                project: selectedProject ?? 'unknown',
+                zone: 'unknown', // We don't have zone info here, but we can improve this later
+              );
+            }
+
             state = {
               ...state,
               instanceName: TunnelState(
@@ -423,8 +437,28 @@ class ConnectionsNotifier extends Notifier<Map<String, TunnelState>> {
         await startInstance(projectId: projectId, zone: zone, instanceName: instanceName);
       }
       await refreshInstances(projectId);
+
+      // Send success notification
+      NotificationService().notifyLifecycleOperation(
+        instanceName: instanceName,
+        operation: 'Start',
+        success: true,
+        project: projectId,
+        zone: zone,
+      );
     } catch (e) {
       debugPrint('Error starting instance: $e');
+
+      // Send failure notification
+      NotificationService().notifyLifecycleOperation(
+        instanceName: instanceName,
+        operation: 'Start',
+        success: false,
+        project: projectId,
+        zone: zone,
+        errorMessage: e.toString(),
+      );
+
       rethrow;
     }
   }
@@ -442,8 +476,28 @@ class ConnectionsNotifier extends Notifier<Map<String, TunnelState>> {
         await stopInstance(projectId: projectId, zone: zone, instanceName: instanceName);
       }
       await refreshInstances(projectId);
+
+      // Send success notification
+      NotificationService().notifyLifecycleOperation(
+        instanceName: instanceName,
+        operation: 'Stop',
+        success: true,
+        project: projectId,
+        zone: zone,
+      );
     } catch (e) {
       debugPrint('Error stopping instance: $e');
+
+      // Send failure notification
+      NotificationService().notifyLifecycleOperation(
+        instanceName: instanceName,
+        operation: 'Stop',
+        success: false,
+        project: projectId,
+        zone: zone,
+        errorMessage: e.toString(),
+      );
+
       rethrow;
     }
   }
@@ -461,8 +515,28 @@ class ConnectionsNotifier extends Notifier<Map<String, TunnelState>> {
         await resetInstance(projectId: projectId, zone: zone, instanceName: instanceName);
       }
       await refreshInstances(projectId);
+
+      // Send success notification
+      NotificationService().notifyLifecycleOperation(
+        instanceName: instanceName,
+        operation: 'Reset',
+        success: true,
+        project: projectId,
+        zone: zone,
+      );
     } catch (e) {
       debugPrint('Error resetting instance: $e');
+
+      // Send failure notification
+      NotificationService().notifyLifecycleOperation(
+        instanceName: instanceName,
+        operation: 'Reset',
+        success: false,
+        project: projectId,
+        zone: zone,
+        errorMessage: e.toString(),
+      );
+
       rethrow;
     }
   }
@@ -581,14 +655,22 @@ class AutoRefreshNotifier extends Notifier<AutoRefreshState> {
       newStates[instance.name] = instance.status;
     }
 
-    // Detect changes
+    // Detect changes and send notifications
     for (final instance in instances) {
       final previousStatus = previousStates[instance.name];
       final currentStatus = instance.status;
 
       if (previousStatus != null && previousStatus != currentStatus) {
         debugPrint('🔔 State change detected: ${instance.name} $previousStatus → $currentStatus');
-        // Notification will be handled by the UI layer
+
+        // Send notification
+        NotificationService().notifyVmStateChange(
+          instanceName: instance.name,
+          oldState: previousStatus,
+          newState: currentStatus,
+          project: selectedProject,
+          zone: instance.zone,
+        );
       }
     }
 
